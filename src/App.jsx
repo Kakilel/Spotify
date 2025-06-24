@@ -31,6 +31,7 @@ function App() {
         <TopTracks token={token} />
         <Playlists token={token} />
         <RecentlyPlayed token={token} />
+        <ArtistMinutes token={token}/>
       </>
     )}
   </div>
