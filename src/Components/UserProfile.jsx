@@ -15,12 +15,31 @@ function UserProfile({ token }) {
   if (!profile) return null;
 
   return (
-    <div>
-      <h2>User Profile</h2>
-      <p>Name: {profile.display_name}</p>
-      <p>Email: {profile.email}</p>
-      <p>Country: {profile.country}</p>
-      <p>Followers: {profile.followers.total}</p>
+    <div className="bg-gray-900 text-white p-6 rounded-lg mb-6">
+      <h2 className="text-2xl text-purple-400 font-semibold mb-4">Your Spotify Profile</h2>
+      <div className="flex items-center space-x-4">
+        {profile.images?.[0]?.url && (
+          <img
+            src={profile.images[0].url}
+            alt="Profile"
+            className="w-24 h-24 rounded-full object-cover"
+          />
+        )}
+        <div>
+          <p className="text-lg font-bold">{profile.display_name}</p>
+          <p className="text-sm text-gray-300">Email: {profile.email}</p>
+          <p className="text-sm text-gray-300">Country: {profile.country}</p>
+          <p className="text-sm text-gray-300">Followers: {profile.followers.total}</p>
+          <a
+            href={profile.external_urls.spotify}
+            target="_blank"
+            rel="noreferrer"
+            className="text-purple-400 hover:underline mt-2 inline-block"
+          >
+            Open in Spotify
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

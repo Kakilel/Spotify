@@ -11,25 +11,35 @@ function TopArtists({ token }) {
       .get("https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setArtists(res.data.items))
-      .catch((err) => console.error("Failed to fetch top artists:", err));
+      .then((res) => setArtists(res.data.items));
   }, [token]);
 
   return (
     <div>
-      <h2>Top Artists (All Time)</h2>
-      <ul>
+      <h2 className="text-2xl text-purple-400 font-semibold mb-4">Top Artists</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {artists.map((artist) => (
-          <li key={artist.id}>
-            <button onClick={() => setSelected(artist.name)}>
-              {artist.name}
+          <div key={artist.id} className="bg-gray-900 rounded-lg p-4">
+            <img
+              src={artist.images[0]?.url}
+              alt={artist.name}
+              className="rounded mb-2 w-full h-40 object-cover"
+            />
+            <p className="font-bold">{artist.name}</p>
+            <p className="text-sm text-gray-300">Genres: {artist.genres.join(", ")}</p>
+            <p className="text-sm text-gray-400">
+              Followers: {artist.followers.total.toLocaleString()}
+            </p>
+            <button
+              onClick={() => setSelected(artist.name)}
+              className="mt-2 bg-purple-600 px-2 py-1 rounded hover:bg-purple-500"
+            >
+              View Minutes
             </button>
-          </li>
+          </div>
         ))}
-      </ul>
-      {selected && (
-        <ArtistMinutes token={token} artistName={selected} />
-      )}
+      </div>
+      {selected && <ArtistMinutes token={token} artistName={selected} />}
     </div>
   );
 }

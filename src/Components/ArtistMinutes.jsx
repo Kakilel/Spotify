@@ -22,7 +22,16 @@ function ArtistMinutes({ token, artistName }) {
   }, [token, artistName]);
 
   return (
-    <p>Estimated minutes listened to {artistName}: {minutes ?? "Loading..."}</p>
+    <div className="bg-gray-800 text-white p-4 rounded mt-4">
+      <p className="text-purple-400 font-semibold">
+        Estimated minutes listened to <span className="text-white font-bold">{artistName}</span>:{" "}
+        {minutes !== null ? (
+          <span className="text-green-400">{minutes.toLocaleString()} minutes</span>
+        ) : (
+          "Loading..."
+        )}
+      </p>
+    </div>
   );
 }
 
