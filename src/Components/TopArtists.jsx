@@ -31,11 +31,14 @@ function TopArtists({ token }) {
               Followers: {artist.followers.total.toLocaleString()}
             </p>
             <button
-              onClick={() => setSelected({id:artist.id, name:artist.name})}
-              className="mt-2 bg-purple-600 px-2 py-1 rounded hover:bg-purple-500"
-            >
-              View Minutes
-            </button>
+  onClick={() => {
+    console.log("Selected:", artist.name, artist.id); // DEBUG
+    setSelected({ id: artist.id, name: artist.name });
+  }}
+>
+  View Minutes
+</button>
+
           </div>
         ))}
       </div>
