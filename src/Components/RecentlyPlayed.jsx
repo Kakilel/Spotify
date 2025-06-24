@@ -13,27 +13,30 @@ function RecentlyPlayed({ token }) {
   }, [token]);
 
   return (
-    <div>
-      <h2 className="text-2xl text-purple-400 font-semibold mb-4">Recently Played</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="mt-10">
+      <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow">
+        Recently Played
+      </h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {tracks.map((item, i) => (
           <div
             key={i}
-            className="bg-gray-900 text-white rounded-lg p-4"
+            className="bg-gray-900 rounded-xl p-4 text-white shadow-lg hover:shadow-purple-500/30 transition-transform duration-300 transform hover:scale-105"
           >
             <img
               src={item.track.album.images[0]?.url}
               alt={item.track.name}
-              className="w-full h-40 object-cover rounded mb-2"
+              className="rounded w-full h-48 object-cover mb-3"
             />
-            <p className="font-bold">{item.track.name}</p>
-            <p className="text-sm text-gray-400">
+            <p className="font-semibold text-lg truncate">{item.track.name}</p>
+            <p className="text-sm text-gray-400 mb-2 truncate">
               {item.track.artists.map((a) => a.name).join(", ")}
             </p>
             {item.track.preview_url && (
               <audio
                 controls
-                className="mt-2 w-full"
+                className="w-full mt-2"
                 src={item.track.preview_url}
               />
             )}

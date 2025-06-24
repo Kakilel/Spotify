@@ -13,25 +13,32 @@ function TopTracks({ token }) {
   }, [token]);
 
   return (
-    <div>
-      <h2 className="text-2xl text-purple-400 font-semibold mb-4">Top Tracks</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="mt-10">
+      <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow">
+        Your Top Tracks
+      </h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {tracks.map((track) => (
           <div
             key={track.id}
-            className="bg-gray-900 text-white rounded-lg p-4"
+            className="bg-gray-900 rounded-xl p-4 shadow-lg hover:shadow-purple-500/30 transition-transform transform hover:scale-105 duration-300 text-white"
           >
             <img
               src={track.album.images[0]?.url}
               alt={track.name}
-              className="w-full h-40 object-cover rounded mb-2"
+              className="rounded w-full h-48 object-cover mb-3"
             />
-            <p className="font-bold">{track.name}</p>
-            <p className="text-sm text-gray-400">
+            <p className="font-semibold text-lg truncate">{track.name}</p>
+            <p className="text-sm text-gray-400 truncate">
               {track.artists.map((a) => a.name).join(", ")}
             </p>
             {track.preview_url && (
-              <audio controls className="w-full mt-2" src={track.preview_url} />
+              <audio
+                controls
+                className="w-full mt-3"
+                src={track.preview_url}
+              />
             )}
           </div>
         ))}

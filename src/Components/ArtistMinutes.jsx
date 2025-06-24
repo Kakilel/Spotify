@@ -1,38 +1,70 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { db } from "../../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
-function ArtistMinutes({ token, artistId, artistName }) {
+function ArtistMinutes({ token, artistId, artistName, userId }) {
   const [minutes, setMinutes] = useState(null);
 
-useEffect(() => {
-  axios
-    .get("https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=50", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => {
-      const artistTracks = res.data.items.filter((track) =>
-        track.artists.some((a) => a.id === artistId)
-      );
-      const totalMs = artistTracks.reduce((sum, t) => sum + t.duration_ms * 10, 0);
-      setMinutes(Math.round(totalMs / 60000));
-    })
-    .catch((err) => console.error("Error fetching top tracks:", err));
-}, [token, artistId]);
+  useEffect(() => {
+    const timeRanges = ["short_term", "medium_term", "long_term"];
+    const allTracks = [];
 
+    Promise.all(
+      timeRanges.map((range) =>
+        axios.get(
+          `https://api.spotify.com/v1/me/top/tracks?time_range=${range}&limit=50`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+      )
+    )
+      .then(async (responses) => {
+        responses.forEach((res) => allTracks.push(...res.data.items));
+
+        const artistTracks = allTracks.filter((track) =>
+          track.artists.some((a) => a.id === artistId)
+        );
+
+        const estimatedPlayCount = 20;
+        const totalMs = artistTracks.reduce(
+          (sum, t) => sum + t.duration_ms * estimatedPlayCount,
+          0
+        );
+        const estimatedMinutes = Math.round(totalMs / 60000);
+        setMinutes(estimatedMinutes);
+
+        // Save to Firestore
+        if (userId) {
+          const docRef = doc(db, "users", userId, "artists", artistId);
+          await setDoc(docRef, {
+            artistName,
+            artistId,
+            estimatedMinutes,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching tracks:", err));
+  }, [token, artistId, userId, artistName]);
 
   return (
     <div className="bg-gray-800 text-white p-4 rounded mt-4">
       <p className="text-purple-400 font-semibold">
-        Estimated minutes listened to <span className="text-white font-bold">{artistName}</span>:{" "}
+        Estimated minutes listened to{" "}
+        <span className="text-white font-bold">{artistName}</span>:{" "}
         {minutes !== null ? (
           <span className="text-green-400">{minutes.toLocaleString()} minutes</span>
         ) : (
           "Loading..."
         )}
       </p>
+      <p className="text-sm text-gray-400 mt-1">
+        Data saved to your Firestore profile.
+      </p>
     </div>
   );
 }
-
 
 export default ArtistMinutes;
