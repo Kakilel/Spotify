@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-function ArtistMinutes({ token, artistName }) {
+function ArtistMinutes({ token, artistId, artistName }) {
   const [minutes, setMinutes] = useState(null);
 
   useEffect(() => {
@@ -11,15 +11,13 @@ function ArtistMinutes({ token, artistName }) {
       })
       .then((res) => {
         const artistTracks = res.data.items.filter((track) =>
-          track.artists.some((a) =>
-            a.name.toLowerCase().includes(artistName.toLowerCase())
-          )
+          track.artists.some((a) => a.id === artistId)
         );
 
         const totalMs = artistTracks.reduce((sum, t) => sum + t.duration_ms * 10, 0);
         setMinutes(Math.round(totalMs / 60000));
       });
-  }, [token, artistName]);
+  }, [token, artistId]);
 
   return (
     <div className="bg-gray-800 text-white p-4 rounded mt-4">
@@ -34,5 +32,6 @@ function ArtistMinutes({ token, artistName }) {
     </div>
   );
 }
+
 
 export default ArtistMinutes;

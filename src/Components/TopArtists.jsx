@@ -31,7 +31,7 @@ function TopArtists({ token }) {
               Followers: {artist.followers.total.toLocaleString()}
             </p>
             <button
-              onClick={() => setSelected(artist.name)}
+              onClick={() => setSelected({id:artist.id, name:artist.name})}
               className="mt-2 bg-purple-600 px-2 py-1 rounded hover:bg-purple-500"
             >
               View Minutes
@@ -39,7 +39,7 @@ function TopArtists({ token }) {
           </div>
         ))}
       </div>
-      {selected && <ArtistMinutes token={token} artistName={selected} />}
+      {selected && <ArtistMinutes token={token} artistId={selected.id} artistName={selected.name} />}
     </div>
   );
 }
