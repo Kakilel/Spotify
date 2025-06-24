@@ -5,16 +5,20 @@ function Playlists({ token }) {
   const [playlists, setPlaylists] = useState([]);
 
   useEffect(() => {
-    axios.get("https://api.spotify.com/v1/me/playlists", {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(res => setPlaylists(res.data.items));
+    axios
+      .get("https://api.spotify.com/v1/me/playlists?limit=10", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setPlaylists(res.data.items));
   }, [token]);
 
   return (
     <div>
       <h2>Your Playlists</h2>
       <ul>
-        {playlists.map(p => <li key={p.id}>{p.name}</li>)}
+        {playlists.map((playlist) => (
+          <li key={playlist.id}>{playlist.name}</li>
+        ))}
       </ul>
     </div>
   );

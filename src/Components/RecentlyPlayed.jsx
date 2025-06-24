@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-function TopTracks({ token }) {
+function RecentlyPlayed({ token }) {
   const [tracks, setTracks] = useState([]);
 
   useEffect(() => {
     axios
-      .get("https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=10", {
+      .get("https://api.spotify.com/v1/me/player/recently-played?limit=10", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setTracks(res.data.items));
@@ -14,11 +14,11 @@ function TopTracks({ token }) {
 
   return (
     <div>
-      <h2>Top Tracks (All Time)</h2>
+      <h2>Recently Played</h2>
       <ul>
-        {tracks.map((track) => (
-          <li key={track.id}>
-            {track.name} – {track.artists[0].name}
+        {tracks.map((item, i) => (
+          <li key={i}>
+            {item.track.name} – {item.track.artists[0].name}
           </li>
         ))}
       </ul>
@@ -26,4 +26,4 @@ function TopTracks({ token }) {
   );
 }
 
-export default TopTracks;
+export default RecentlyPlayed;

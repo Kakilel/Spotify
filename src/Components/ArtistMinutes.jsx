@@ -10,25 +10,19 @@ function ArtistMinutes({ token, artistName }) {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        const tracks = res.data.items.filter((track) =>
+        const artistTracks = res.data.items.filter((track) =>
           track.artists.some((a) =>
             a.name.toLowerCase().includes(artistName.toLowerCase())
           )
         );
 
-        const totalMs = tracks.reduce(
-          (acc, track) => acc + track.duration_ms * 10,
-          0
-        ); // Assuming each track listened 10 times
-        const totalMin = Math.round(totalMs / 60000);
-        setMinutes(totalMin);
+        const totalMs = artistTracks.reduce((sum, t) => sum + t.duration_ms * 10, 0);
+        setMinutes(Math.round(totalMs / 60000));
       });
   }, [token, artistName]);
 
   return (
-    <div>
-      <p>Estimated minutes listened to {artistName}: {minutes}</p>
-    </div>
+    <p>Estimated minutes listened to {artistName}: {minutes ?? "Loading..."}</p>
   );
 }
 
