@@ -46,25 +46,26 @@ function Landing() {
       <div className="relative bg-white/5 backdrop-blur-md rounded-xl p-10 mx-auto mt-12 w-full max-w-4xl shadow-2xl border border-white/10">
         {/* Top row of 4 */}
         <div className="flex justify-center space-x-[-30px] mb-[-16px] z-10 relative">
-          {artists.slice(0, 4).map((artist, i) => (
-            <motion.div
-              key={i}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.1 }}
-              className="relative group"
-            >
-              <img
-                src={artist.img}
-                alt={artist.name}
-                className="w-32 h-32 rounded-full object-cover shadow-xl hover:scale-110 transition-transform duration-300"
-              />
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm text-white opacity-0 group-hover:opacity-100 transition">
-                {artist.name}
-              </span>
-            </motion.div>
-          ))}
-        </div>
+  {artists.slice(0, 4).map((artist, i) => (
+    <motion.div
+      key={i}
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: i * 0.1 }}
+      className="relative group w-32 h-32"
+    >
+      <img
+        src={artist.img}
+        alt={artist.name}
+        className="w-32 h-32 rounded-full object-cover shadow-xl hover:scale-110 transition-transform duration-300 hover:blur-[0.9px]"
+      />
+      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition duration-300">
+        {artist.name}
+      </span>
+    </motion.div>
+  ))}
+</div>
+
 
         {/* Bottom row of 2 */}
         <div className="flex justify-center gap-0 mt-6 z-0 relative">
@@ -79,9 +80,9 @@ function Landing() {
               <img
                 src={artist.img}
                 alt={artist.name}
-                className="w-32 h-32 rounded-full object-cover shadow-xl hover:scale-110 transition-transform duration-300"
+                className="w-32 h-32 rounded-full object-cover shadow-x2 hover:scale-110 transition-transform duration-300 hover:blur-[0.9px]"
               />
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm text-white opacity-0 group-hover:opacity-100 transition">
+               <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition duration-300">
                 {artist.name}
               </span>
             </motion.div>

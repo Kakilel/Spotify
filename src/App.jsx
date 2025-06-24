@@ -60,7 +60,6 @@ function App() {
         {token && selected === "top-tracks" && <TopTracks token={token} />}
         {token && selected === "playlists" && <Playlists token={token} />}
         {token && selected === "recently-played" && <RecentlyPlayed token={token} />}
-        {token && selected === "artist-minutes" && <ArtistMinutes token={token} />}
       </div>
     </div>
   );
