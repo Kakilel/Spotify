@@ -19,7 +19,7 @@ function App() {
     <div>
       <h1>Spotify Lifetime Stats</h1>
       {!token ? (
-        <a href="/api/spotify-login">
+        <a href="/api/login">
           <button>Login with Spotify</button>
         </a>
       ) : (
