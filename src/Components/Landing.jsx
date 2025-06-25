@@ -3,19 +3,19 @@ import { motion } from "framer-motion";
 function Landing() {
   const artists = [
     {
-      name: "Tems",
+      name: "TEMS",
       img: "https://i.pinimg.com/736x/83/99/27/839927fe6093450b1313ae0b5900f4a8.jpg",
     },
     {
-      name: "Drake",
+      name: "DRAKE",
       img: "https://i.pinimg.com/736x/46/5c/78/465c78f9e9e5cdca49f033f3bc83a249.jpg",
     },
     {
-      name: "Rema",
+      name: "REMA",
       img: "https://i.pinimg.com/736x/76/00/93/760093b8f4312df71025103f095c2183.jpg",
     },
     {
-      name: "Lil Maina",
+      name: "LIL MAINA",
       img: "https://i.pinimg.com/736x/d9/bf/a9/d9bfa947bc558a6211af056de1ffa272.jpg",
     },
     {
@@ -23,7 +23,7 @@ function Landing() {
       img: "https://i.pinimg.com/736x/6c/c2/c4/6cc2c434d9dc5ea61cfa49d34ff5067a.jpg",
     },
     {
-      name: "Central Cee",
+      name: "CENTRAL CEE",
       img: "https://i.pinimg.com/736x/86/75/78/8675783e01011e4270234ade5631b1e4.jpg",
     },
   ];

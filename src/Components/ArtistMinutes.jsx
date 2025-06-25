@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
 
 function ArtistMinutes({ token, artistId, artistName, userId }) {
   const [minutes, setMinutes] = useState(null);
@@ -35,7 +36,6 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
         const estimatedMinutes = Math.round(totalMs / 60000);
         setMinutes(estimatedMinutes);
 
-        // Save to Firestore
         if (userId) {
           const docRef = doc(db, "users", userId, "artists", artistId);
           await setDoc(docRef, {
@@ -50,20 +50,28 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
   }, [token, artistId, userId, artistName]);
 
   return (
-    <div className="bg-gray-800 text-white p-4 rounded mt-4">
-      <p className="text-purple-400 font-semibold">
-        Estimated minutes listened to{" "}
-        <span className="text-white font-bold">{artistName}</span>:{" "}
-        {minutes !== null ? (
-          <span className="text-green-400">{minutes.toLocaleString()} minutes</span>
-        ) : (
-          "Loading..."
-        )}
-      </p>
-      <p className="text-sm text-gray-400 mt-1">
-        Data saved to your Firestore profile.
-      </p>
-    </div>
+    <AnimatePresence>
+      {minutes !== null && (
+        <motion.div
+          className="bg-gray-800 text-white p-4 rounded mt-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+          <p className="text-purple-400 font-semibold">
+            Estimated minutes listened to{" "}
+            <span className="text-white font-bold">{artistName}</span>:{" "}
+            <span className="text-green-400">
+              {minutes.toLocaleString()} minutes
+            </span>
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            Data saved to your Firestore profile.
+          </p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
