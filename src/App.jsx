@@ -14,6 +14,7 @@ const sections = [
   { id: "playlists", label: "Playlists" },
   { id: "recently-played", label: "Recently Played" },
   { id: "artist-minutes", label: "Artist Minutes" },
+  
 ];
 
 function App() {
@@ -54,7 +55,7 @@ function App() {
 
       {/* Main Content */}
       <div className="p-6 space-y-6">
-        <Landing token={token}/>
+        {!token && <Landing/>}
         {token && selected === "profile" && <UserProfile token={token} />}
         {token && selected === "top-artists" && <TopArtists token={token} />}
         {token && selected === "top-tracks" && <TopTracks token={token} />}
