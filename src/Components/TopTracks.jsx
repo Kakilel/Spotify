@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { db } from "../../firebase"; // adjust path if needed
+import { doc, setDoc } from "firebase/firestore";
+import { FaSpotify, FaHeart } from "react-icons/fa";
 
-function TopTracks({ token }) {
+function TopTracks({ token, user }) {
   const [tracks, setTracks] = useState([]);
+  const [savingTrackId, setSavingTrackId] = useState(null);
 
   useEffect(() => {
     axios
@@ -11,6 +15,30 @@ function TopTracks({ token }) {
       })
       .then((res) => setTracks(res.data.items));
   }, [token]);
+
+  const saveToFavorites = async (track) => {
+    if (!user) return alert("You must be logged in to save favorites.");
+
+    const docRef = doc(db, "users", user.uid, "favorites", track.id);
+    setSavingTrackId(track.id);
+
+    try {
+      await setDoc(docRef, {
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map((a) => a.name),
+        albumImage: track.album.images[0]?.url || "",
+        preview_url: track.preview_url,
+        spotify_url: track.external_urls.spotify,
+        savedAt: new Date().toISOString(),
+      });
+      alert("Track saved to favorites!");
+    } catch (err) {
+      console.error("Error saving track:", err);
+    } finally {
+      setSavingTrackId(null);
+    }
+  };
 
   return (
     <div className="mt-10">
@@ -33,13 +61,36 @@ function TopTracks({ token }) {
             <p className="text-sm text-gray-400 truncate">
               {track.artists.map((a) => a.name).join(", ")}
             </p>
-            {track.preview_url && (
+
+            {track.preview_url ? (
               <audio
                 controls
                 className="w-full mt-3"
                 src={track.preview_url}
               />
+            ) : (
+              <p className="text-sm text-gray-500 mt-3">Preview not available</p>
             )}
+
+            <div className="flex items-center justify-between mt-4">
+              <a
+                href={track.external_urls.spotify}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-green-400 text-sm hover:underline hover:text-green-300"
+              >
+                <FaSpotify /> Listen
+              </a>
+
+              <button
+                onClick={() => saveToFavorites(track)}
+                disabled={savingTrackId === track.id}
+                className="text-pink-400 hover:text-pink-300 text-sm flex items-center gap-2"
+              >
+                <FaHeart />
+                {savingTrackId === track.id ? "Saving..." : "Save"}
+              </button>
+            </div>
           </div>
         ))}
       </div>
