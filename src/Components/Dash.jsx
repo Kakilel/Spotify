@@ -50,6 +50,18 @@ function Dash({ user, onLogin }) {
       saveApps();
     }
   }, [addedApps, user]);
+  
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("access_token");
+
+  if (token) {
+    
+    window.history.replaceState(null, null, "/spotify?access_token=" + token);
+
+    navigate("/spotify?access_token=" + token);
+  }
+}, [navigate]);
 
   const addApp = (appName) => {
     if (!addedApps.find((a) => a.name === appName)) {
