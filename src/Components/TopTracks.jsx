@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { db } from "../../firebase"; // adjust path if needed
+import { db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { FaSpotify, FaHeart } from "react-icons/fa";
 

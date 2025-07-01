@@ -21,12 +21,19 @@ function Login({ onLogin }) {
       let userCredential;
 
       if (isNewUser) {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email, password);
+        setIsNewUser(false);
+        setEmail("");
+        setPassword("");
+        setError("Account created! Please log in.");
       } else {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        if (onLogin) onLogin(userCredential.user);
       }
-
-      if (onLogin) onLogin(userCredential.user); // Notify parent
     } catch (error) {
       let message = "Authentication failed.";
       if (error.code === "auth/email-already-in-use") {

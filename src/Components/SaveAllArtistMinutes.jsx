@@ -16,7 +16,6 @@ function SaveAllArtistMinutes({ token, userId }) {
         const timeRanges = ["short_term", "medium_term", "long_term"];
         const allTracks = [];
 
-        // 1. Fetch top tracks from all time ranges
         const responses = await Promise.all(
           timeRanges.map((range) =>
             axios.get(
@@ -28,11 +27,11 @@ function SaveAllArtistMinutes({ token, userId }) {
 
         responses.forEach((res) => allTracks.push(...res.data.items));
 
-        // 2. Group tracks by artist ID
+       
         const artistMap = {};
 
         for (const track of allTracks) {
-          const estimatedPlays = 20; // adjust if needed
+          const estimatedPlays = 20; 
           const durationMs = track.duration_ms * estimatedPlays;
 
           for (const artist of track.artists) {
@@ -47,7 +46,7 @@ function SaveAllArtistMinutes({ token, userId }) {
           }
         }
 
-        // 3. Save each artist to Firestore
+       
         const savePromises = Object.values(artistMap).map((artist) => {
           const minutes = Math.round(artist.totalMs / 60000);
           const docRef = doc(db, "users", userId, "artists", artist.artistId);

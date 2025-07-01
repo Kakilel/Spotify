@@ -44,7 +44,8 @@ function Landing() {
 
       {/* Featured Artist Showcase */}
       <div className="relative bg-white/5 backdrop-blur-md rounded-xl p-10 mx-auto mt-12 w-full max-w-4xl shadow-2xl border border-white/10">
-        {/* Top row of 4 */}
+        {/* Top row  */}
+
         <div className="flex justify-center space-x-[-30px] mb-[-16px] z-10 relative">
   {artists.slice(0, 4).map((artist, i) => (
     <motion.div
@@ -67,7 +68,7 @@ function Landing() {
 </div>
 
 
-        {/* Bottom row of 2 */}
+        {/* Bottom row */}
         <div className="flex justify-center gap-0 mt-6 z-0 relative">
           {artists.slice(4).map((artist, i) => (
             <motion.div

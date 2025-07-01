@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 
-import Login from "./Components/Login"; // your Firebase login page
+import Login from "./Components/Login";
 import Navbar from "./Components/Navbar";
 import Landing from "./Components/Landing";
 import UserProfile from "./Components/UserProfile";
@@ -59,7 +59,7 @@ function App() {
   const [selected, setSelected] = useState("profile");
   const [loading, setLoading] = useState(true);
 
-  // Firebase Auth state
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
