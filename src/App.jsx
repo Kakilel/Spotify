@@ -60,12 +60,12 @@ function App() {
               )
             }
           />
-        <Route path='/spotify' element={token ? (
-          <UserProfile token={token}/>
-        ) : (
-          <Navigate to='/'/>
-        )}/>
-          <Route path="/github" element={<Github />} />
+        <Route path="spotify" element={<Landing/>}/>
+        <Route path="/github" element={<Github />} />
+        <Route path="/userprofile" element={<UserProfile/>} />
+        
+       
+
         </Routes>
 
         {/* Modal Login */}
