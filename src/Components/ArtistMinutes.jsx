@@ -4,35 +4,39 @@ import { db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 
+const RANGE_MAP = {
+  daily: "short_term",
+  weekly: "short_term",
+  monthly: "medium_term",
+  "all-time": "long_term",
+};
+
+const LABELS = ["daily", "weekly", "monthly", "all-time"];
+
 function ArtistMinutes({ token, artistId, artistName, userId }) {
   const [minutes, setMinutes] = useState(null);
+  const [range, setRange] = useState("all-time");
 
   useEffect(() => {
-    const timeRanges = ["short_term", "medium_term", "long_term"];
-    const allTracks = [];
+    if (!artistId) return;
 
-    Promise.all(
-      timeRanges.map((range) =>
-        axios.get(
-          `https://api.spotify.com/v1/me/top/tracks?time_range=${range}&limit=50`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
-      )
-    )
-      .then(async (responses) => {
-        responses.forEach((res) => allTracks.push(...res.data.items));
+    const selectedRange = RANGE_MAP[range];
+    const estimatedPlayCount = range === "daily" ? 2 : range === "weekly" ? 10 : 20;
 
-        const artistTracks = allTracks.filter((track) =>
+    axios
+      .get(`https://api.spotify.com/v1/me/top/tracks?time_range=${selectedRange}&limit=50`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(async (res) => {
+        const artistTracks = res.data.items.filter((track) =>
           track.artists.some((a) => a.id === artistId)
         );
 
-        const estimatedPlayCount = 20;
         const totalMs = artistTracks.reduce(
           (sum, t) => sum + t.duration_ms * estimatedPlayCount,
           0
         );
+
         const estimatedMinutes = Math.round(totalMs / 60000);
         setMinutes(estimatedMinutes);
 
@@ -42,12 +46,13 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
             artistName,
             artistId,
             estimatedMinutes,
+            range,
             timestamp: new Date().toISOString(),
           });
         }
       })
-      .catch((err) => console.error("Error fetching tracks:", err));
-  }, [token, artistId, userId, artistName]);
+      .catch((err) => console.error("Error fetching artist tracks:", err));
+  }, [token, artistId, userId, artistName, range]);
 
   return (
     <AnimatePresence>
@@ -57,17 +62,28 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          transition={{ duration: 0.4 }}
         >
-          <p className="text-purple-400 font-semibold">
-            Estimated minutes listened to{" "}
-            <span className="text-white font-bold">{artistName}</span>:{" "}
-            <span className="text-green-400">
-              {minutes.toLocaleString()} minutes
-            </span>
-          </p>
-          <p className="text-sm text-gray-400 mt-1">
-            Data saved to your Firestore profile.
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-purple-400 font-semibold">
+              Estimated minutes listened to{" "}
+              <span className="text-white font-bold">{artistName}</span>
+            </p>
+            <select
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+            >
+              {LABELS.map((label) => (
+                <option key={label} value={label}>
+                  {label.charAt(0).toUpperCase() + label.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-green-400 text-lg font-semibold">
+            {minutes.toLocaleString()} minutes
           </p>
         </motion.div>
       )}

@@ -8,9 +8,12 @@ function TopArtists({ token }) {
 
   useEffect(() => {
     axios
-      .get("https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(
+        "https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
       .then((res) => setArtists(res.data.items));
   }, [token]);
 
@@ -40,24 +43,28 @@ function TopArtists({ token }) {
             </p>
 
             <button
-              onClick={() => setSelected({ id: artist.id, name: artist.name })}
-              className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-sm px-4 py-2 rounded-full font-medium hover:brightness-110 transition"
+              onClick={() =>
+                setSelected(
+                  selected?.id === artist.id
+                    ? null
+                    : { id: artist.id, name: artist.name }
+                )
+              }
+              className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-sm px-4 py-2 rounded-full font-medium hover:brightness-110 transition mb-2"
             >
-              View Minutes
+              {selected?.id === artist.id ? "Hide Minutes" : "View Minutes"}
             </button>
+
+            {selected?.id === artist.id && (
+              <ArtistMinutes
+                token={token}
+                artistId={artist.id}
+                artistName={artist.name}
+              />
+            )}
           </div>
         ))}
       </div>
-
-      {selected && (
-        <div className="mt-8">
-          <ArtistMinutes
-            token={token}
-            artistId={selected.id}
-            artistName={selected.name}
-          />
-        </div>
-      )}
     </div>
   );
 }
