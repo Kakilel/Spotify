@@ -14,6 +14,7 @@ import Dash from "./Components/Dash";
 import SpotDash from "./Components/SpotDash";
 import Landing from "./Components/Landing";
 import Github from "./Components/Github";
+import UserProfile from "./Components/UserProfile";
 
 function App() {
   const [token, setToken] = useState(null);
@@ -46,10 +47,7 @@ function App() {
             path="/"
             element={<Dash user={user} onLogin={setUser} />}
           />
-          <Route
-            path="/spotdash"
-            element={
-              user ? (
+          <Route path="/spotdash" element={user ? (
                 <SpotDash
                   token={token}
                   user={user}
@@ -62,7 +60,11 @@ function App() {
               )
             }
           />
-          <Route path="/spotify" element={<Landing />} />
+        <Route path='/spotify' element={token ? (
+          <UserProfile token={token}/>
+        ) : (
+          <Navigate to='/'/>
+        )}/>
           <Route path="/github" element={<Github />} />
         </Routes>
 

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     );
 
     const accessToken = response.data.access_token;
-    res.redirect(`/dash#access_token=${accessToken}`);
+    res.redirect(`/?access_token=${accessToken}`);
   } catch (error) {
     console.error("Spotify callback error:", error.response?.data || error.message);
     res.status(500).send("Error exchanging code for token.");
