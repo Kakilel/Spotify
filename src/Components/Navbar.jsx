@@ -19,8 +19,8 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
   };
 
   return (
-    <nav className="bg-gray-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-md relative">
-      <h1 className="text-2xl font-extrabold text-purple-400 tracking-tight drop-shadow-sm">
+    <nav className="bg-bg-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-md relative">
+      <h1 className="text-2xl font-extrabold text-primary-300 tracking-tight drop-shadow-sm">
         Spotify Stats
       </h1>
 
@@ -28,7 +28,7 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="flex items-center space-x-2 bg-gray-800 text-white px-4 py-2 rounded-full hover:bg-gray-700"
+            className="flex items-center space-x-2 bg-bg-300 text-text-100 px-4 py-2 rounded-full hover:bg-primary-200 transition"
           >
             {user.photoURL && (
               <img
@@ -37,7 +37,7 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
                 className="w-8 h-8 rounded-full object-cover"
               />
             )}
-            <span className="text-sm">{user.displayName || user.email}</span>
+            <span className="text-sm font-medium">{user.displayName || user.email}</span>
           </button>
 
           <AnimatePresence>
@@ -47,12 +47,12 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -5 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-48 bg-gray-800 rounded shadow-lg z-20"
+                className="absolute right-0 mt-2 w-52 bg-bg-300 text-white rounded shadow-xl border border-bg-100 z-50 overflow-hidden"
               >
                 <select
                   value={selected}
                   onChange={(e) => setSelected(e.target.value)}
-                  className="w-full bg-gray-800 text-white px-4 py-2 border-b border-purple-500 focus:outline-none"
+                  className="w-full bg-bg-300 text-text-100 px-4 py-2 border-b border-primary-200 focus:outline-none"
                 >
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -62,7 +62,7 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
                 </select>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700"
+                  className="block w-full text-left px-4 py-2 text-red-400 hover:bg-primary-100 hover:text-white transition"
                 >
                   Logout
                 </button>
@@ -71,7 +71,9 @@ function Navbar({ token, user, setToken, selected, setSelected, sections }) {
           </AnimatePresence>
         </div>
       ) : (
-        <a href="/api/login"></a>
+        <a href="/api/login" className="text-accent-200 hover:underline text-sm">
+          Login with Spotify
+        </a>
       )}
     </nav>
   );

@@ -1,64 +1,26 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
+import { motion, AnimatePresence } from "framer-motion";
 
 import Login from "./Components/Login";
-import Navbar from "./Components/Navbar";
+import Dash from "./Components/Dash";
+import SpotDash from "./Components/SpotDash";
 import Landing from "./Components/Landing";
-import UserProfile from "./Components/UserProfile";
-import TopArtists from "./Components/TopArtists";
-import ArtistMinutes from "./Components/ArtistMinutes";
-import TopTracks from "./Components/TopTracks";
-import Playlists from "./Components/Playlists";
-import RecentlyPlayed from "./Components/RecentlyPlayed";
-
-const sections = [
-  { id: "profile", label: "Profile" },
-  { id: "top-artists", label: "Top Artists" },
-  { id: "top-tracks", label: "Top Tracks" },
-  { id: "playlists", label: "Playlists" },
-  { id: "recently-played", label: "Recently Played" },
-  { id: "artist-minutes", label: "Artist Minutes" },
-];
-
-function Dashboard({ token, user, selected, setSelected, setToken }) {
-  return (
-    <>
-      <Navbar
-        token={token}
-        user={user}
-        setToken={setToken}
-        selected={selected}
-        setSelected={setSelected}
-        sections={sections}
-      />
-      <div className="p-6 space-y-6">
-        {!token && <Landing />}
-        {token && selected === "profile" && <UserProfile token={token} />}
-        {token && selected === "top-artists" && <TopArtists token={token} userId={user?.uid} />}
-        {token && selected === "top-tracks" && <TopTracks token={token} />}
-        {token && selected === "playlists" && <Playlists token={token} />}
-        {token && selected === "recently-played" && <RecentlyPlayed token={token} />}
-        {token && selected === "artist-minutes" && (
-          <ArtistMinutes
-            token={token}
-            artistId=""
-            artistName="..."
-            userId={user?.uid}
-          />
-        )}
-      </div>
-    </>
-  );
-}
+import Github from "./Components/Github";
 
 function App() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [selected, setSelected] = useState("profile");
   const [loading, setLoading] = useState(true);
-
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -68,7 +30,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Spotify token
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("access_token");
@@ -79,23 +40,17 @@ function App() {
 
   return (
     <Router>
-      <div className="bg-black min-h-screen text-white">
+      <div className="bg-black min-h-screen text-white relative">
         <Routes>
           <Route
             path="/"
-            element={
-              user ? (
-                <Navigate to="/dashboard" />
-              ) : (
-                <Login />
-              )
-            }
+            element={<Dash user={user} onLogin={setUser} />}
           />
           <Route
-            path="/dashboard"
+            path="/spotdash"
             element={
               user ? (
-                <Dashboard
+                <SpotDash
                   token={token}
                   user={user}
                   selected={selected}
@@ -107,7 +62,43 @@ function App() {
               )
             }
           />
+          <Route path="/spotify" element={<Landing />} />
+          <Route path="/github" element={<Github />} />
         </Routes>
+
+        {/* Modal Login */}
+        <AnimatePresence>
+          {!user && showLogin && (
+            <motion.div
+              key="login-modal"
+              className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="relative w-full max-w-md"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <button
+                  onClick={() => setShowLogin(false)}
+                  className="absolute top-2 right-2 text-white text-xl font-bold hover:text-red-400"
+                >
+                  &times;
+                </button>
+                <Login
+                  onLogin={(user) => {
+                    setUser(user);
+                    setShowLogin(false);
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Router>
   );

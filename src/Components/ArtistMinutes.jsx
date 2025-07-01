@@ -58,21 +58,21 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
     <AnimatePresence>
       {minutes !== null && (
         <motion.div
-          className="bg-gray-800 text-white p-4 rounded mt-4"
+          className="bg-bg-300 text-text-100 p-4 rounded mt-4"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.4 }}
         >
           <div className="flex items-center justify-between mb-2">
-            <p className="text-purple-400 font-semibold">
+            <p className="text-primary-300 font-semibold">
               Estimated minutes listened to{" "}
-              <span className="text-white font-bold">{artistName}</span>
+              <span className="text-text-100 font-bold">{artistName}</span>
             </p>
             <select
               value={range}
               onChange={(e) => setRange(e.target.value)}
-              className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+              className="bg-bg-200 text-text-100 text-sm rounded px-2 py-1"
             >
               {LABELS.map((label) => (
                 <option key={label} value={label}>
@@ -82,7 +82,7 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
             </select>
           </div>
 
-          <p className="text-green-400 text-lg font-semibold">
+          <p className="text-accent-200 text-lg font-semibold">
             {minutes.toLocaleString()} minutes
           </p>
         </motion.div>

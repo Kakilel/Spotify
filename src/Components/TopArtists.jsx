@@ -2,19 +2,19 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import ArtistMinutes from "./ArtistMinutes";
 
-function TopArtists({ token }) {
+function TopArtists({ token, userId }) {
   const [artists, setArtists] = useState([]);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
+    if (!token) return;
+
     axios
-      .get(
-        "https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-      .then((res) => setArtists(res.data.items));
+      .get("https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setArtists(res.data.items))
+      .catch((err) => console.error("Error fetching top artists:", err));
   }, [token]);
 
   return (
@@ -60,6 +60,7 @@ function TopArtists({ token }) {
                 token={token}
                 artistId={artist.id}
                 artistName={artist.name}
+                userId={userId}
               />
             )}
           </div>

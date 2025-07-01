@@ -7,13 +7,20 @@ import { FaSpotify, FaHeart } from "react-icons/fa";
 function TopTracks({ token, user }) {
   const [tracks, setTracks] = useState([]);
   const [savingTrackId, setSavingTrackId] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!token) return;
+
     axios
       .get("https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=10", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setTracks(res.data.items));
+      .then((res) => setTracks(res.data.items))
+      .catch((err) => {
+        console.error("Error fetching top tracks:", err);
+        setError("Failed to fetch top tracks. Please try again.");
+      });
   }, [token]);
 
   const saveToFavorites = async (track) => {
@@ -45,6 +52,8 @@ function TopTracks({ token, user }) {
       <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow">
         Your Top Tracks
       </h2>
+
+      {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {tracks.map((track) => (
@@ -85,7 +94,9 @@ function TopTracks({ token, user }) {
               <button
                 onClick={() => saveToFavorites(track)}
                 disabled={savingTrackId === track.id}
-                className="text-pink-400 hover:text-pink-300 text-sm flex items-center gap-2"
+                className={`text-pink-400 hover:text-pink-300 text-sm flex items-center gap-2 ${
+                  savingTrackId === track.id ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
                 <FaHeart />
                 {savingTrackId === track.id ? "Saving..." : "Save"}

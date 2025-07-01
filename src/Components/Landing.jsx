@@ -33,57 +33,55 @@ function Landing() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7 }}
-      className="text-white text-center px-6 py-12 min-h-screen bg-gradient-to-b from-black via-[#1f1f2e] to-black"
+      className="text-text-100 text-center px-6 py-12 min-h-screen bg-gradient-to-b from-bg-100 via-bg-200 to-bg-100"
     >
-      <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">
-        Spotify  Stats
+      <h1 className="text-4xl md:text-5xl font-extrabold text-primary-300 drop-shadow-lg">
+        Spotify Stats
       </h1>
-      <p className="text-lg text-gray-300 max-w-xl mx-auto mt-4">
+      <p className="text-lg text-text-200 max-w-xl mx-auto mt-4">
         Discover your top artists, tracks, playlists, and how many minutes you've really spent with your favorite music.
       </p>
 
       {/* Featured Artist Showcase */}
-      <div className="relative bg-white/5 backdrop-blur-md rounded-xl p-10 mx-auto mt-12 w-full max-w-4xl shadow-2xl border border-white/10">
-        {/* Top row  */}
-
-        <div className="flex justify-center space-x-[-30px] mb-[-16px] z-10 relative">
-  {artists.slice(0, 4).map((artist, i) => (
-    <motion.div
-      key={i}
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: i * 0.1 }}
-      className="relative group w-32 h-32"
-    >
-      <img
-        src={artist.img}
-        alt={artist.name}
-        className="w-32 h-32 rounded-full object-cover shadow-xl hover:scale-110 transition-transform duration-300 hover:blur-[0.9px]"
-      />
-      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition duration-300">
-        {artist.name}
-      </span>
-    </motion.div>
-  ))}
-</div>
-
+      <div className="relative bg-bg-200 backdrop-blur-md rounded-xl p-10 mx-auto mt-12 w-full max-w-4xl shadow-2xl border border-bg-300">
+        {/* Top row */}
+        <div className="flex justify-center space-x-[-30px] mb-[-16px] relative z-10">
+          {artists.slice(0, 4).map((artist, i) => (
+            <motion.div
+              key={i}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className="relative group w-32 h-32"
+            >
+              <img
+                src={artist.img}
+                alt={artist.name}
+                className="w-32 h-32 rounded-full object-cover shadow-xl transition-transform duration-300 group-hover:scale-110 group-hover:blur-sm"
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-sm text-white font-semibold bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition duration-300">
+                {artist.name}
+              </span>
+            </motion.div>
+          ))}
+        </div>
 
         {/* Bottom row */}
-        <div className="flex justify-center gap-0 mt-6 z-0 relative">
+        <div className="flex justify-center gap-4 mt-6 relative z-0">
           {artists.slice(4).map((artist, i) => (
             <motion.div
               key={i + 4}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.4 + i * 0.1 }}
-              className="relative group"
+              className="relative group w-32 h-32"
             >
               <img
                 src={artist.img}
                 alt={artist.name}
-                className="w-32 h-32 rounded-full object-cover shadow-x2 hover:scale-110 transition-transform duration-300 hover:blur-[0.9px]"
+                className="w-32 h-32 rounded-full object-cover shadow-xl transition-transform duration-300 group-hover:scale-110 group-hover:blur-sm"
               />
-               <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-white font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition duration-300">
+              <span className="absolute inset-0 flex items-center justify-center text-sm text-white font-semibold bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition duration-300">
                 {artist.name}
               </span>
             </motion.div>
@@ -96,7 +94,7 @@ function Landing() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="mt-12 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:brightness-110 transition"
+          className="mt-12 bg-gradient-to-r from-primary-200 to-primary-100 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:brightness-110 transition"
         >
           Login with Spotify
         </motion.button>

@@ -13,8 +13,8 @@ function Playlists({ token }) {
   }, [token]);
 
   return (
-    <div className="mt-10">
-      <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow">
+    <div className="mt-10 px-4">
+      <h2 className="text-3xl font-bold text-primary-300 mb-6 text-center drop-shadow">
         Your Spotify Playlists
       </h2>
 
@@ -22,16 +22,16 @@ function Playlists({ token }) {
         {playlists.map((playlist) => (
           <div
             key={playlist.id}
-            className="bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:shadow-purple-500/30 transition duration-300 transform hover:scale-105"
+            className="bg-bg-300 rounded-xl overflow-hidden shadow-lg hover:shadow-accent-100/40 transition duration-300 transform hover:scale-105"
           >
             <img
               src={playlist.images[0]?.url}
               alt={playlist.name}
               className="w-full h-48 object-cover"
             />
-            <div className="p-4">
+            <div className="p-4 text-text-100">
               <p className="font-semibold text-lg truncate">{playlist.name}</p>
-              <p className="text-sm text-gray-400 mb-2">
+              <p className="text-sm text-text-200 mb-2">
                 Tracks: {playlist.tracks.total}
               </p>
               {playlist.external_urls.spotify && (
@@ -39,7 +39,7 @@ function Playlists({ token }) {
                   href={playlist.external_urls.spotify}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block mt-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs px-3 py-1 rounded-full font-medium hover:brightness-110 transition"
+                  className="inline-block mt-2 bg-gradient-to-r from-primary-200 to-primary-300 text-black text-xs px-3 py-1 rounded-full font-medium hover:brightness-110 transition"
                 >
                   Open in Spotify
                 </a>

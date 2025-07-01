@@ -3,14 +3,39 @@ import axios from "axios";
 
 function UserProfile({ token }) {
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!token) return;
+
     axios
       .get("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setProfile(res.data));
+      .then((res) => setProfile(res.data))
+      .catch((err) => {
+        console.error("Failed to fetch user profile:", err);
+        setError("Unable to load Spotify profile.");
+      })
+      .finally(() => setLoading(false));
   }, [token]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900 text-purple-300 p-6 rounded-xl text-center shadow mb-10">
+        Loading profile...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-600 text-white p-4 rounded-xl text-center shadow mb-10">
+        {error}
+      </div>
+    );
+  }
 
   if (!profile) return null;
 

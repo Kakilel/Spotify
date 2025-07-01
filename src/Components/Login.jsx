@@ -27,11 +27,7 @@ function Login({ onLogin }) {
         setPassword("");
         setError("Account created! Please log in.");
       } else {
-        userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
         if (onLogin) onLogin(userCredential.user);
       }
     } catch (error) {
@@ -52,17 +48,17 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-gray-900 p-6">
+    <div className="flex items-center justify-center px-4 py-8 min-h-[60vh]">
       <form
         onSubmit={handleAuth}
-        className="bg-gray-800 p-8 rounded-xl shadow-md w-full max-w-md text-white space-y-4"
+        className="bg-bg-200 border border-bg-300 p-8 rounded-xl shadow-xl w-full max-w-md text-white space-y-4"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">
+        <h2 className="text-2xl font-bold text-primary-300 text-center mb-2">
           {isNewUser ? "Create Account" : "Login to Spotify Stats"}
         </h2>
 
         {error && (
-          <div className="bg-red-500 text-white text-sm px-4 py-2 rounded">
+          <div className="bg-red-600 text-white text-sm px-4 py-2 rounded shadow-sm">
             {error}
           </div>
         )}
@@ -73,7 +69,7 @@ function Login({ onLogin }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           required
-          className="w-full px-4 py-2 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full px-4 py-2 rounded bg-bg-300 text-white placeholder-text-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
         />
 
         <input
@@ -82,7 +78,7 @@ function Login({ onLogin }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
-          className="w-full px-4 py-2 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full px-4 py-2 rounded bg-bg-300 text-white placeholder-text-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
         />
 
         <button
@@ -90,8 +86,8 @@ function Login({ onLogin }) {
           disabled={loading}
           className={`w-full py-2 rounded-md font-semibold transition duration-300 ${
             loading
-              ? "bg-purple-300 cursor-not-allowed"
-              : "bg-purple-600 hover:bg-purple-700"
+              ? "bg-primary-300 cursor-not-allowed"
+              : "bg-primary-200 hover:bg-primary-100"
           }`}
         >
           {loading
@@ -103,11 +99,11 @@ function Login({ onLogin }) {
             : "Login"}
         </button>
 
-        <p className="text-center text-sm mt-2">
+        <p className="text-center text-sm mt-2 text-text-200">
           {isNewUser ? "Already have an account?" : "New to Spotify Stats?"}{" "}
           <button
             type="button"
-            className="text-purple-400 hover:underline"
+            className="text-accent-200 hover:underline"
             onClick={() => setIsNewUser(!isNewUser)}
           >
             {isNewUser ? "Login here" : "Sign up here"}
