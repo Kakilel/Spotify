@@ -10,7 +10,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { FaTrash, FaEdit, FaSpotify, FaSave } from "react-icons/fa";
+import { FaTrash, FaEdit, FaSpotify } from "react-icons/fa";
 
 function PlaylistBuilder({ user }) {
   const [favorites, setFavorites] = useState([]);
@@ -28,43 +28,52 @@ function PlaylistBuilder({ user }) {
   useEffect(() => {
     if (!user) return;
 
-    const fetchFavorites = async () => {
-      const snapshot = await getDocs(
-        collection(db, "users", user.uid, "favorites")
+    const fetchData = async () => {
+      const [favoritesSnap, playlistsSnap] = await Promise.all([
+        getDocs(collection(db, "users", user.uid, "favorites")),
+        getDocs(collection(db, "users", user.uid, "customPlaylists")),
+      ]);
+
+      setFavorites(favoritesSnap.docs.map((doc) => doc.data()));
+      setPlaylists(
+        playlistsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
       );
-      setFavorites(snapshot.docs.map((doc) => doc.data()));
     };
 
-    const fetchPlaylists = async () => {
-      const snapshot = await getDocs(
-        collection(db, "users", user.uid, "customPlaylists")
-      );
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setPlaylists(data);
-    };
-
-    fetchFavorites();
-    fetchPlaylists();
+    fetchData();
   }, [user]);
 
   const toggleTrack = (trackId) => {
-    if (selectedTracks.includes(trackId)) {
-      setSelectedTracks(selectedTracks.filter((id) => id !== trackId));
-    } else {
-      setSelectedTracks([...selectedTracks, trackId]);
-    }
+    setSelectedTracks((prev) =>
+      prev.includes(trackId)
+        ? prev.filter((id) => id !== trackId)
+        : [...prev, trackId]
+    );
+  };
+
+  const resetForm = () => {
+    setPlaylistName("");
+    setDescription("");
+    setCategory("");
+    setSelectedTracks([]);
+    setEditingId(null);
+  };
+
+  const refreshPlaylists = async () => {
+    const snapshot = await getDocs(
+      collection(db, "users", user.uid, "customPlaylists")
+    );
+    setPlaylists(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleSave = async () => {
     if (!playlistName || !category) {
-      return setStatus("Please fill all required fields.");
+      return setStatus("⚠️ Please fill all required fields.");
     }
     setLoading(true);
-    try {
-      const tracks = favorites.filter((track) =>
-        selectedTracks.includes(track.id)
-      );
 
+    try {
+      const tracks = favorites.filter((t) => selectedTracks.includes(t.id));
       const data = {
         name: playlistName,
         description,
@@ -78,35 +87,37 @@ function PlaylistBuilder({ user }) {
           doc(db, "users", user.uid, "customPlaylists", editingId),
           data
         );
-        setStatus("Playlist updated ✅");
+        setStatus("✅ Playlist updated.");
       } else {
-        const playlistId = uuidv4();
-        await setDoc(
-          doc(db, "users", user.uid, "customPlaylists", playlistId),
-          {
-            ...data,
-            id: playlistId,
-          }
-        );
-        setStatus("Playlist saved ✅");
+        const id = uuidv4();
+        await setDoc(doc(db, "users", user.uid, "customPlaylists", id), {
+          ...data,
+          id,
+        });
+        setStatus("✅ Playlist created.");
       }
 
       resetForm();
-      const snapshot = await getDocs(
-        collection(db, "users", user.uid, "customPlaylists")
-      );
-      setPlaylists(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    } catch {
-      setStatus("Error saving playlist ❌");
+      await refreshPlaylists();
+    } catch (err) {
+      setStatus("❌ Error saving playlist.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Delete this playlist?")) {
+    const confirm = window.confirm("Are you sure you want to delete this playlist?");
+    if (!confirm) return;
+
+    try {
       await deleteDoc(doc(db, "users", user.uid, "customPlaylists", id));
       setPlaylists((prev) => prev.filter((p) => p.id !== id));
+      setStatus("🗑️ Playlist deleted.");
+    } catch (err) {
+      setStatus("❌ Failed to delete playlist.");
+      console.error(err);
     }
   };
 
@@ -116,14 +127,7 @@ function PlaylistBuilder({ user }) {
     setCategory(playlist.category);
     setSelectedTracks(playlist.tracks?.map((t) => t.id) || []);
     setEditingId(playlist.id);
-  };
-
-  const resetForm = () => {
-    setPlaylistName("");
-    setDescription("");
-    setCategory("");
-    setSelectedTracks([]);
-    setEditingId(null);
+    setStatus("✏️ Editing playlist.");
   };
 
   return (
@@ -191,7 +195,11 @@ function PlaylistBuilder({ user }) {
           loading ? "bg-bg-200" : "bg-primary-200 hover:bg-primary-300"
         }`}
       >
-        {loading ? "Saving..." : editingId ? "Update Playlist" : "Save Playlist"}
+        {loading
+          ? "Saving..."
+          : editingId
+          ? "Update Playlist"
+          : "Save Playlist"}
       </button>
 
       {status && <p className="mt-3 text-center text-accent-100">{status}</p>}
@@ -214,22 +222,32 @@ function PlaylistBuilder({ user }) {
                 <p className="text-sm text-text-200">{playlist.category}</p>
               </div>
               <div className="flex gap-3">
-                <button onClick={() => startEdit(playlist)} className="text-accent-100">
+                <button
+                  onClick={() => startEdit(playlist)}
+                  className="text-accent-100"
+                >
                   <FaEdit />
                 </button>
-                <button onClick={() => handleDelete(playlist.id)} className="text-red-400">
+                <button
+                  onClick={() => handleDelete(playlist.id)}
+                  className="text-red-400"
+                >
                   <FaTrash />
                 </button>
               </div>
             </div>
+
             {playlist.description && (
               <p className="text-sm text-text-200 mb-2 italic">
                 {playlist.description}
               </p>
             )}
+
             <p className="text-xs text-text-200 mb-2">
-              {playlist.tracks.length} track{playlist.tracks.length !== 1 && "s"}
+              {playlist.tracks.length} track
+              {playlist.tracks.length !== 1 && "s"}
             </p>
+
             <div className="space-y-2 max-h-56 overflow-y-auto">
               {playlist.tracks.map((track) => (
                 <div
