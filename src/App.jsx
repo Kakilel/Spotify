@@ -23,7 +23,7 @@ function InnerApp() {
   const [selected, setSelected] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
