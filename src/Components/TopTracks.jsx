@@ -1,14 +1,32 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { FaSpotify, FaHeart } from "react-icons/fa";
 
-function TopTracks({ token, user }) {
+function TopTracks({ token }) {
   const [tracks, setTracks] = useState([]);
   const [savingTrackId, setSavingTrackId] = useState(null);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
 
+  // Auto anonymous sign-in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        signInAnonymously(auth)
+          .then((res) => setUser(res.user))
+          .catch((err) => console.error("Anon sign-in error:", err));
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch top tracks
   useEffect(() => {
     if (!token) return;
 
@@ -24,7 +42,7 @@ function TopTracks({ token, user }) {
   }, [token]);
 
   const saveToFavorites = async (track) => {
-    if (!user) return alert("You must be logged in to save favorites.");
+    if (!user) return alert("Please wait while we connect...");
 
     const docRef = doc(db, "users", user.uid, "favorites", track.id);
     setSavingTrackId(track.id);
@@ -72,11 +90,7 @@ function TopTracks({ token, user }) {
             </p>
 
             {track.preview_url ? (
-              <audio
-                controls
-                className="w-full mt-3"
-                src={track.preview_url}
-              />
+              <audio controls className="w-full mt-3" src={track.preview_url} />
             ) : (
               <p className="text-sm text-gray-500 mt-3">Preview not available</p>
             )}
