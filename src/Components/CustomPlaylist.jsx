@@ -1,21 +1,39 @@
 import { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, doc,setDoc,  getDocs, deleteDoc, updateDoc,} from "firebase/firestore";
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
-function CustomPlaylists({ user }) {
+function CustomPlaylists({ user, spotifyToken }) {
   const [playlists, setPlaylists] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [songs, setSongs] = useState({});
 
   const fetchPlaylists = async () => {
     const ref = collection(db, "users", user.uid, "customPlaylists");
     const snap = await getDocs(ref);
     const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setPlaylists(data);
+  };
+
+  const fetchSongs = async (playlistId) => {
+    const ref = collection(db, "users", user.uid, "customPlaylists", playlistId, "songs");
+    const snap = await getDocs(ref);
+    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setSongs((prev) => ({ ...prev, [playlistId]: data }));
   };
 
   useEffect(() => {
@@ -51,16 +69,47 @@ function CustomPlaylists({ user }) {
   };
 
   const handleUpdate = async () => {
-    await updateDoc(
-      doc(db, "users", user.uid, "customPlaylists", editingId),
-      {
-        name: editingName,
-        description: editingDescription,
-        updatedAt: new Date().toISOString(),
-      }
-    );
+    await updateDoc(doc(db, "users", user.uid, "customPlaylists", editingId), {
+      name: editingName,
+      description: editingDescription,
+      updatedAt: new Date().toISOString(),
+    });
     setEditingId(null);
     fetchPlaylists();
+  };
+
+  const searchSpotifyTracks = async () => {
+    if (!searchQuery || !spotifyToken) return;
+
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=5`,
+      {
+        headers: {
+          Authorization: `Bearer ${spotifyToken}`,
+        },
+      }
+    );
+    const data = await res.json();
+    const tracks = data.tracks?.items || [];
+    setSearchResults(tracks);
+  };
+
+  const handleAddSong = async (playlistId, track) => {
+    const songData = {
+      id: track.id,
+      name: track.name,
+      artist: track.artists.map((a) => a.name).join(", "),
+      album: track.album.name,
+      image: track.album.images[0]?.url || "",
+      uri: track.uri,
+      addedAt: new Date().toISOString(),
+    };
+
+    await setDoc(
+      doc(db, "users", user.uid, "customPlaylists", playlistId, "songs", track.id),
+      songData
+    );
+    fetchSongs(playlistId);
   };
 
   return (
@@ -96,15 +145,15 @@ function CustomPlaylists({ user }) {
           {playlists.map((playlist) => (
             <li
               key={playlist.id}
-              className="bg-gray-800 p-4 rounded flex justify-between items-start flex-col sm:flex-row sm:items-center"
+              className="bg-gray-800 p-4 rounded flex flex-col gap-3"
             >
               {editingId === playlist.id ? (
-                <div className="w-full">
+                <>
                   <input
                     type="text"
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
-                    className="w-full px-3 py-1 mb-2 rounded bg-gray-700 text-white"
+                    className="w-full px-3 py-1 rounded bg-gray-700 text-white"
                   />
                   <textarea
                     value={editingDescription}
@@ -125,26 +174,98 @@ function CustomPlaylists({ user }) {
                       Cancel
                     </button>
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="w-full">
-                  <h3 className="font-bold text-lg">{playlist.name}</h3>
-                  <p className="text-sm text-gray-400">{playlist.description}</p>
-                  <div className="mt-2 flex gap-3">
-                    <button
-                      onClick={() => startEdit(playlist)}
-                      className="text-sm text-yellow-400 hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(playlist.id)}
-                      className="text-sm text-red-400 hover:underline"
-                    >
-                      Delete
-                    </button>
+                <>
+                  <div>
+                    <h3 className="font-bold text-lg">{playlist.name}</h3>
+                    <p className="text-sm text-gray-400">{playlist.description}</p>
+                    <div className="mt-2 flex gap-3">
+                      <button
+                        onClick={() => startEdit(playlist)}
+                        className="text-sm text-yellow-400 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(playlist.id)}
+                        className="text-sm text-red-400 hover:underline"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedPlaylistId(
+                            selectedPlaylistId === playlist.id ? null : playlist.id
+                          );
+                          fetchSongs(playlist.id);
+                        }}
+                        className="text-sm text-blue-400 hover:underline"
+                      >
+                        {selectedPlaylistId === playlist.id ? "Hide Songs" : "Manage Songs"}
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  {selectedPlaylistId === playlist.id && (
+                    <div className="mt-4 w-full">
+                      <input
+                        type="text"
+                        placeholder="Search Spotify songs..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-3 py-1 rounded bg-gray-700 text-white mb-2"
+                      />
+                      <button
+                        onClick={searchSpotifyTracks}
+                        className="bg-blue-600 text-white px-3 py-1 rounded mb-4"
+                      >
+                        Search
+                      </button>
+
+                      <div className="space-y-3">
+                        {searchResults.map((track) => (
+                          <div
+                            key={track.id}
+                            className="flex items-center justify-between bg-gray-700 p-2 rounded"
+                          >
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={track.album.images[2]?.url}
+                                alt={track.name}
+                                className="w-10 h-10 rounded"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold">{track.name}</p>
+                                <p className="text-xs text-gray-300">
+                                  {track.artists.map((a) => a.name).join(", ")}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleAddSong(playlist.id, track)}
+                              className="text-sm text-green-400 hover:underline"
+                            >
+                              ➕ Add
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {songs[playlist.id]?.length > 0 && (
+                        <ul className="mt-4 text-sm text-gray-200 space-y-1">
+                          <h4 className="font-bold text-white mb-1">🎶 Songs in Playlist:</h4>
+                          {songs[playlist.id].map((song) => (
+                            <li key={song.id} className="flex items-center gap-2">
+                              <img src={song.image} alt={song.name} className="w-8 h-8 rounded" />
+                              <span>{song.name} — {song.artist}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </li>
           ))}
