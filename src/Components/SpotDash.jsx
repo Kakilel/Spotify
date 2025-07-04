@@ -8,6 +8,7 @@ import TopTracks from "./TopTracks";
 import Playlists from "./Playlists";
 import RecentlyPlayed from "./RecentlyPlayed";
 import PlaylistBuilder from "./PlaylistBuilder";
+import Favorites from "./Favorites";
 
 
 const sections = [
@@ -16,8 +17,9 @@ const sections = [
   { id: "top-tracks", label: "Top Tracks" },
   { id: "playlists", label: "Playlists" },
   { id: "recently-played", label: "Recently Played" },
-  { id: "artist-minutes", label: "Artist Minutes" },
-    { id: "playlist-builder", label: "Custom Playlists" },  
+  { id: "artist-minutes", label: "Stats Summary" },
+    { id: "playlist-builder", label: "Custom Playlists" },
+    {id : 'favorites', label:'Favorites'}  
 ];
 
 function SpotDash({ token, user, selected, setSelected, setToken }) {
@@ -49,6 +51,9 @@ function SpotDash({ token, user, selected, setSelected, setToken }) {
             artistName="..."
             userId={user?.uid}
           />
+        )}
+        {token && selected === "favorites" && (
+          <Favorites user={user} token={token}/>
         )}
         {token && selected === "playlist-builder" && (
   <PlaylistBuilder user={user} token={token} />

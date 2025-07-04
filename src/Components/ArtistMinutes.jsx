@@ -3,6 +3,7 @@ import axios from "axios";
 import { db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
+import WeeklySummaryPage from "./WeeklySummaryPage";
 
 const RANGE_MAP = {
   daily: "short_term",
@@ -55,6 +56,7 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
   }, [token, artistId, userId, artistName, range]);
 
   return (
+      <>
     <AnimatePresence>
       {minutes !== null && (
         <motion.div
@@ -88,6 +90,8 @@ function ArtistMinutes({ token, artistId, artistName, userId }) {
         </motion.div>
       )}
     </AnimatePresence>
+    <WeeklySummaryPage/>
+    </>
   );
 }
 

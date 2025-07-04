@@ -1,5 +1,4 @@
-// UnifiedPlaylistBuilder.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { db } from "../../firebase";
 import {
   collection,
@@ -12,16 +11,68 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { FaTrash, FaEdit, FaSpotify } from "react-icons/fa";
 
+const initialState = {
+  playlists: [],
+  selectedTracks: [],
+  playlistName: "",
+  description: "",
+  category: "",
+  editingId: null,
+  loading: false,
+  status: null,
+  trackName: "",
+  trackArtist: "",
+  trackImage: "",
+  spotifyUrl: "",
+  previewUrl: "",
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "SET_PLAYLISTS":
+      return { ...state, playlists: action.playlists };
+    case "ADD_TRACK":
+      return {
+        ...state,
+        selectedTracks: [...state.selectedTracks, action.track],
+        trackName: "",
+        trackArtist: "",
+        trackImage: "",
+        spotifyUrl: "",
+        previewUrl: "",
+      };
+    case "RESET_FORM":
+      return {
+        ...state,
+        playlistName: "",
+        description: "",
+        category: "",
+        selectedTracks: [],
+        editingId: null,
+      };
+    case "SET_STATUS":
+      return { ...state, status: action.status };
+    case "SET_LOADING":
+      return { ...state, loading: action.loading };
+    case "EDIT_PLAYLIST":
+      return {
+        ...state,
+        playlistName: action.playlist.name,
+        description: action.playlist.description || "",
+        category: action.playlist.category,
+        selectedTracks: action.playlist.tracks || [],
+        editingId: action.playlist.id,
+        status: "Editing playlist.",
+      };
+    default:
+      return state;
+  }
+}
+
 function PlaylistBuilder({ user }) {
-  const [favorites, setFavorites] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
-  const [selectedTracks, setSelectedTracks] = useState([]);
-  const [playlistName, setPlaylistName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   const categories = ["Workout", "Chill", "Party", "Focus", "Custom"];
 
@@ -29,81 +80,66 @@ function PlaylistBuilder({ user }) {
     if (!user) return;
 
     const fetchData = async () => {
-      const [favoritesSnap, playlistsSnap] = await Promise.all([
-        getDocs(collection(db, "users", user.uid, "favorites")),
-        getDocs(collection(db, "users", user.uid, "customPlaylists")),
-      ]);
-
-      setFavorites(favoritesSnap.docs.map((doc) => doc.data()));
-      setPlaylists(
-        playlistsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      const playlistsSnap = await getDocs(
+        collection(db, "users", user.uid, "customPlaylists")
       );
+      dispatch({
+        type: "SET_PLAYLISTS",
+        playlists: playlistsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      });
     };
 
     fetchData();
   }, [user]);
 
-  const toggleTrack = (trackId) => {
-    setSelectedTracks((prev) =>
-      prev.includes(trackId)
-        ? prev.filter((id) => id !== trackId)
-        : [...prev, trackId]
-    );
-  };
-
-  const resetForm = () => {
-    setPlaylistName("");
-    setDescription("");
-    setCategory("");
-    setSelectedTracks([]);
-    setEditingId(null);
-  };
-
   const refreshPlaylists = async () => {
     const snapshot = await getDocs(
       collection(db, "users", user.uid, "customPlaylists")
     );
-    setPlaylists(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    dispatch({
+      type: "SET_PLAYLISTS",
+      playlists: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    });
   };
 
   const handleSave = async () => {
-    if (!playlistName || !category) {
-      return setStatus("⚠️ Please fill all required fields.");
+    if (!state.playlistName || !state.category) {
+      return dispatch({ type: "SET_STATUS", status: " Please fill all required fields." });
     }
-    setLoading(true);
+
+    dispatch({ type: "SET_LOADING", loading: true });
 
     try {
-      const tracks = favorites.filter((t) => selectedTracks.includes(t.id));
       const data = {
-        name: playlistName,
-        description,
-        category,
+        name: state.playlistName,
+        description: state.description,
+        category: state.category,
         createdAt: new Date().toISOString(),
-        tracks,
+        tracks: state.selectedTracks,
       };
 
-      if (editingId) {
+      if (state.editingId) {
         await updateDoc(
-          doc(db, "users", user.uid, "customPlaylists", editingId),
+          doc(db, "users", user.uid, "customPlaylists", state.editingId),
           data
         );
-        setStatus("✅ Playlist updated.");
+        dispatch({ type: "SET_STATUS", status: "Playlist updated." });
       } else {
         const id = uuidv4();
         await setDoc(doc(db, "users", user.uid, "customPlaylists", id), {
           ...data,
           id,
         });
-        setStatus("✅ Playlist created.");
+        dispatch({ type: "SET_STATUS", status: " Playlist created." });
       }
 
-      resetForm();
+      dispatch({ type: "RESET_FORM" });
       await refreshPlaylists();
     } catch (err) {
-      setStatus("❌ Error saving playlist.");
+      dispatch({ type: "SET_STATUS", status: "Error saving playlist." });
       console.error(err);
     } finally {
-      setLoading(false);
+      dispatch({ type: "SET_LOADING", loading: false });
     }
   };
 
@@ -113,24 +149,31 @@ function PlaylistBuilder({ user }) {
 
     try {
       await deleteDoc(doc(db, "users", user.uid, "customPlaylists", id));
-      setPlaylists((prev) => prev.filter((p) => p.id !== id));
-      setStatus("🗑️ Playlist deleted.");
+      dispatch({
+        type: "SET_PLAYLISTS",
+        playlists: state.playlists.filter((p) => p.id !== id),
+      });
+      dispatch({ type: "SET_STATUS", status: "Playlist deleted." });
     } catch (err) {
-      setStatus("❌ Failed to delete playlist.");
+      dispatch({ type: "SET_STATUS", status: " Failed to delete playlist." });
       console.error(err);
     }
   };
 
-  const startEdit = (playlist) => {
-    setPlaylistName(playlist.name);
-    setDescription(playlist.description || "");
-    setCategory(playlist.category);
-    setSelectedTracks(playlist.tracks?.map((t) => t.id) || []);
-    setEditingId(playlist.id);
-    setStatus("✏️ Editing playlist.");
+  const handleAddTrack = () => {
+    if (!state.trackName || !state.trackArtist) return;
+    const newTrack = {
+      id: uuidv4(),
+      name: state.trackName,
+      artists: state.trackArtist.split(",").map((a) => a.trim()),
+      albumImage: state.trackImage,
+      spotify_url: state.spotifyUrl,
+      preview_url: state.previewUrl,
+    };
+    dispatch({ type: "ADD_TRACK", track: newTrack });
   };
 
-  return (
+ return (
     <div className="text-text-100 bg-bg-100 p-6 rounded-xl">
       <h2 className="text-3xl font-bold text-primary-300 mb-4 text-center">
         {editingId ? "Edit Playlist" : "Create Playlist"}
@@ -164,28 +207,49 @@ function PlaylistBuilder({ user }) {
         ))}
       </select>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {favorites.map((track) => (
-          <div
-            key={track.id}
-            onClick={() => toggleTrack(track.id)}
-            className={`cursor-pointer border-2 rounded-xl p-3 transition hover:shadow-lg ${
-              selectedTracks.includes(track.id)
-                ? "border-primary-200"
-                : "border-bg-200"
-            }`}
-          >
-            <img
-              src={track.albumImage}
-              alt={track.name}
-              className="w-full h-32 object-cover rounded mb-2"
-            />
-            <p className="font-semibold text-sm truncate">{track.name}</p>
-            <p className="text-xs text-text-200 truncate">
-              {track.artists.join(", ")}
-            </p>
-          </div>
-        ))}
+      <div className="mb-6 bg-bg-300 p-4 rounded">
+        <h3 className="text-xl font-bold mb-3 text-primary-200">Add Song</h3>
+        <input
+          type="text"
+          placeholder="Track Name"
+          value={trackName}
+          onChange={(e) => setTrackName(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-bg-200 text-text-100"
+        />
+        <input
+          type="text"
+          placeholder="Artists (comma-separated)"
+          value={trackArtist}
+          onChange={(e) => setTrackArtist(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-bg-200 text-text-100"
+        />
+        <input
+          type="text"
+          placeholder="Album Image URL"
+          value={trackImage}
+          onChange={(e) => setTrackImage(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-bg-200 text-text-100"
+        />
+        <input
+          type="text"
+          placeholder="Spotify URL"
+          value={spotifyUrl}
+          onChange={(e) => setSpotifyUrl(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-bg-200 text-text-100"
+        />
+        <input
+          type="text"
+          placeholder="Preview URL"
+          value={previewUrl}
+          onChange={(e) => setPreviewUrl(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-bg-200 text-text-100"
+        />
+        <button
+          onClick={handleAddTrack}
+          className="w-full py-2 mt-2 bg-primary-200 hover:bg-primary-300 rounded text-white"
+        >
+          Add Track
+        </button>
       </div>
 
       <button
@@ -195,11 +259,7 @@ function PlaylistBuilder({ user }) {
           loading ? "bg-bg-200" : "bg-primary-200 hover:bg-primary-300"
         }`}
       >
-        {loading
-          ? "Saving..."
-          : editingId
-          ? "Update Playlist"
-          : "Save Playlist"}
+        {loading ? "Saving..." : editingId ? "Update Playlist" : "Save Playlist"}
       </button>
 
       {status && <p className="mt-3 text-center text-accent-100">{status}</p>}
@@ -265,14 +325,16 @@ function PlaylistBuilder({ user }) {
                       {track.artists.join(", ")}
                     </p>
                   </div>
-                  <a
-                    href={track.spotify_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-green-400 hover:text-green-300"
-                  >
-                    <FaSpotify />
-                  </a>
+                  {track.spotify_url && (
+                    <a
+                      href={track.spotify_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-green-400 hover:text-green-300"
+                    >
+                      <FaSpotify />
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

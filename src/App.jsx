@@ -16,6 +16,12 @@ import SpotDash from "./Components/SpotDash";
 import Landing from "./Components/Landing";
 import Github from "./Components/Github";
 import UserProfile from "./Components/UserProfile";
+import Favorites from "./Components/Favorites";
+import PlaylistBuilder from "./Components/PlaylistBuilder";
+import TopArtists from "./Components/TopArtists";
+import TopTracks from "./Components/TopTracks";
+import ArtistMinutes from "./Components/ArtistMinutes";
+import Playlists from "./Components/Playlists";
 
 function InnerApp() {
   const [token, setToken] = useState(null);
@@ -70,6 +76,17 @@ function InnerApp() {
         <Route path="/spotify" element={<Landing />} />
         <Route path="/github" element={<Github />} />
         <Route path="/userprofile" element={<UserProfile />} />
+        <Route path='/favorites' elememt={
+          user ?(<Favorites user={user}/>
+            ) : (
+              <Navigate to ='/'/>
+            )
+        }/>
+        <Route path='/playlists' element={<Playlists/>}/>
+        <Route path='/artist-minutes' element={<ArtistMinutes/>}/>
+        <Route path='/top-tracks' element={<TopTracks/>}/>
+        <Route path='/top-artists' element={<TopArtists/>}/>
+        <Route path='/playlist-builder' element={<PlaylistBuilder/>}/>
       </Routes>
 
       {/* Modal Login */}

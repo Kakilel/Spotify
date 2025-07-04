@@ -1,76 +1,132 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { auth, db } from "../../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { motion } from "framer-motion";
 
-function UserProfile({ token }) {
-  const [profile, setProfile] = useState(null);
+function UserProfile() {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState({});
+  const [theme, setTheme] = useState("default");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const docRef = doc(db, "users", firebaseUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setProfile(data);
+          if (data.theme) setTheme(data.theme);
+        }
+        setLoading(false);
+      }
+    });
+    return () => unsub();
+  }, []);
 
-    axios
-      .get("https://api.spotify.com/v1/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setProfile(res.data))
-      .catch((err) => {
-        console.error("Failed to fetch user profile:", err);
-        setError("Unable to load Spotify profile.");
-      })
-      .finally(() => setLoading(false));
-  }, [token]);
+  const handleThemeChange = async (newTheme) => {
+    setTheme(newTheme);
+    if (user) {
+      const ref = doc(db, "users", user.uid);
+      await setDoc(ref, { theme: newTheme }, { merge: true });
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="bg-gray-900 text-purple-300 p-6 rounded-xl text-center shadow mb-10">
-        Loading profile...
-      </div>
-    );
-  }
+  const themes = ["default", "pastel", "neon", "dark"];
 
-  if (error) {
-    return (
-      <div className="bg-red-600 text-white p-4 rounded-xl text-center shadow mb-10">
-        {error}
-      </div>
-    );
-  }
-
-  if (!profile) return null;
+  if (loading) return <p className="text-center mt-10 text-text-200">Loading profile...</p>;
 
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg mb-10">
-      <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow">
-        Your Spotify Profile
-      </h2>
-
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        {profile.images?.[0]?.url && (
+    <div className="p-6 max-w-4xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-bg-200 rounded-xl p-6 shadow-lg text-text-100"
+      >
+        <div className="flex flex-col sm:flex-row items-center gap-6">
           <img
-            src={profile.images[0].url}
-            alt="Profile"
-            className="w-28 h-28 rounded-full object-cover border-4 border-purple-600 shadow-md hover:scale-105 transition duration-300"
+            src={profile.photoURL || "/default-avatar.png"}
+            alt="User Avatar"
+            className="w-24 h-24 rounded-full object-cover border-4 border-primary-300"
           />
-        )}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-primary-300">{profile.displayName || user.email}</h2>
+            <p className="text-text-200 text-sm mt-1">{profile.bio || "No bio yet."}</p>
 
-        <div className="text-center sm:text-left">
-          <p className="text-xl font-semibold mb-1">{profile.display_name}</p>
-          <p className="text-sm text-gray-300">Email: {profile.email}</p>
-          <p className="text-sm text-gray-300">Country: {profile.country}</p>
-          <p className="text-sm text-gray-300 mb-2">
-            Followers: {profile.followers.total.toLocaleString()}
-          </p>
-          <a
-            href={profile.external_urls.spotify}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block text-sm bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-4 py-2 rounded-full hover:brightness-110 transition"
-          >
-            Open in Spotify
-          </a>
+            <label className="block mt-4 text-sm">Theme:</label>
+            <select
+              value={theme}
+              onChange={(e) => handleThemeChange(e.target.value)}
+              className="bg-bg-300 text-text-100 px-3 py-1 rounded"
+            >
+              {themes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+
+        {/* STATS */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-primary-300 mb-2">Listening Stats</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-text-200">
+            <li>🎧 Total Minutes Listened: {profile.totalMinutes || 0}</li>
+            <li>🎵 Top Genre: {profile.topGenre || "Unknown"}</li>
+            <li>🔥 Longest Streak: {profile.streak || 0} weeks</li>
+            <li>⭐ Most Played Artist: {profile.topArtist || "Unknown"}</li>
+          </ul>
+        </div>
+
+        {/* BADGES */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-primary-300 mb-2">Badges</h3>
+          <div className="flex gap-3 flex-wrap">
+            {(profile.badges || ["🎯 Explorer", "🧠 Vibe Seeker"]).map((badge, i) => (
+              <span
+                key={i}
+                className="bg-primary-100 text-text-100 px-3 py-1 rounded-full text-sm"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ACTIVITY FEED */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-primary-300 mb-2">Activity Feed</h3>
+          <ul className="space-y-2 text-text-200 text-sm">
+            {(profile.activity || [
+              "❤️ Favorited 'After Hours'",
+              "🎧 Played 'N95' 12 times",
+              "🔥 You discovered 'FKJ'",
+            ]).map((event, i) => (
+              <li key={i}>• {event}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* FAVORITE MOMENTS */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-primary-300 mb-2">Favorite Moments</h3>
+          <ul className="list-disc ml-6 text-text-200 text-sm">
+            {(profile.moments || [
+              "Week 27 - Coded to Synthwave 🚀",
+              "Month of May - Jazz mornings ☕",
+            ]).map((m, i) => <li key={i}>{m}</li>)}
+          </ul>
+        </div>
+
+        {/* SHARE CARD */}
+        <div className="mt-8 text-center">
+          <button className="bg-accent-100 px-6 py-2 rounded text-text-100 hover:bg-accent-200 transition">
+            Share My Stats 🔗
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
