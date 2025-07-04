@@ -21,8 +21,10 @@ function UserProfile() {
           setProfile(data);
           if (data.theme) setTheme(data.theme);
         }
-        setLoading(false);
+      } else {
+        setUser(null);
       }
+      setLoading(false);
     });
     return () => unsub();
   }, []);
@@ -38,29 +40,29 @@ function UserProfile() {
   const themes = ["default", "pastel", "neon", "dark"];
 
   if (loading) return <p className="text-center mt-10 text-text-200">Loading profile...</p>;
+  if (!user) return <p className="text-center mt-10 text-red-400">Not signed in</p>;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-bg-200 rounded-xl p-6 shadow-lg text-text-100"
+        className="bg-[#1f2b3e] rounded-xl p-6 shadow-lg text-[#FFFFFF]"
       >
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <img
             src={profile.photoURL || "/default-avatar.png"}
             alt="User Avatar"
-            className="w-24 h-24 rounded-full object-cover border-4 border-primary-300"
+            className="w-24 h-24 rounded-full object-cover border-4 border-[#acc2ef]"
           />
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-primary-300">{profile.displayName || user.email}</h2>
-            <p className="text-text-200 text-sm mt-1">{profile.bio || "No bio yet."}</p>
-
+            <h2 className="text-2xl font-bold text-[#acc2ef]">{profile.displayName || user.email}</h2>
+            <p className="text-[#e0e0e0] text-sm mt-1">{profile.bio || "No bio yet."}</p>
             <label className="block mt-4 text-sm">Theme:</label>
             <select
               value={theme}
               onChange={(e) => handleThemeChange(e.target.value)}
-              className="bg-bg-300 text-text-100 px-3 py-1 rounded"
+              className="bg-[#374357] text-white px-3 py-1 rounded"
             >
               {themes.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -69,10 +71,9 @@ function UserProfile() {
           </div>
         </div>
 
-        {/* STATS */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-primary-300 mb-2">Listening Stats</h3>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-text-200">
+          <h3 className="text-xl font-semibold text-[#acc2ef] mb-2">Listening Stats</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#e0e0e0]">
             <li>🎧 Total Minutes Listened: {profile.totalMinutes || 0}</li>
             <li>🎵 Top Genre: {profile.topGenre || "Unknown"}</li>
             <li>🔥 Longest Streak: {profile.streak || 0} weeks</li>
@@ -80,25 +81,20 @@ function UserProfile() {
           </ul>
         </div>
 
-        {/* BADGES */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-primary-300 mb-2">Badges</h3>
+          <h3 className="text-xl font-semibold text-[#acc2ef] mb-2">Badges</h3>
           <div className="flex gap-3 flex-wrap">
             {(profile.badges || ["🎯 Explorer", "🧠 Vibe Seeker"]).map((badge, i) => (
-              <span
-                key={i}
-                className="bg-primary-100 text-text-100 px-3 py-1 rounded-full text-sm"
-              >
+              <span key={i} className="bg-[#1F3A5F] text-white px-3 py-1 rounded-full text-sm">
                 {badge}
               </span>
             ))}
           </div>
         </div>
 
-        {/* ACTIVITY FEED */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-primary-300 mb-2">Activity Feed</h3>
-          <ul className="space-y-2 text-text-200 text-sm">
+          <h3 className="text-xl font-semibold text-[#acc2ef] mb-2">Activity Feed</h3>
+          <ul className="space-y-2 text-[#e0e0e0] text-sm">
             {(profile.activity || [
               "❤️ Favorited 'After Hours'",
               "🎧 Played 'N95' 12 times",
@@ -109,10 +105,9 @@ function UserProfile() {
           </ul>
         </div>
 
-        {/* FAVORITE MOMENTS */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-primary-300 mb-2">Favorite Moments</h3>
-          <ul className="list-disc ml-6 text-text-200 text-sm">
+          <h3 className="text-xl font-semibold text-[#acc2ef] mb-2">Favorite Moments</h3>
+          <ul className="list-disc ml-6 text-[#e0e0e0] text-sm">
             {(profile.moments || [
               "Week 27 - Coded to Synthwave 🚀",
               "Month of May - Jazz mornings ☕",
@@ -120,9 +115,8 @@ function UserProfile() {
           </ul>
         </div>
 
-        {/* SHARE CARD */}
         <div className="mt-8 text-center">
-          <button className="bg-accent-100 px-6 py-2 rounded text-text-100 hover:bg-accent-200 transition">
+          <button className="bg-[#3D5A80] px-6 py-2 rounded text-white hover:bg-[#cee8ff] transition">
             Share My Stats 🔗
           </button>
         </div>
