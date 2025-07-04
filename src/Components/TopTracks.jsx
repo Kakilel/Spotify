@@ -1,34 +1,28 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { db, auth } from "../../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import {
   signInAnonymously,
   onAuthStateChanged,
 } from "firebase/auth";
 import { FaSpotify, FaHeart } from "react-icons/fa";
 
-
 function TopTracks({ token }) {
   const [tracks, setTracks] = useState([]);
   const [savingTrackId, setSavingTrackId] = useState(null);
+  const [savedTrackIds, setSavedTrackIds] = useState([]);
   const [statusMsg, setStatusMsg] = useState({ type: "", message: "" });
   const [user, setUser] = useState(null);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        signInAnonymously(auth)
-          .then((res) => setUser(res.user))
-          .catch((err) =>
-            setStatusMsg({
-              type: "error",
-              message: "Authentication failed. Please refresh.",
-            })
-          );
+        const res = await signInAnonymously(auth);
+        setUser(res.user);
       }
     });
     return () => unsubscribe();
@@ -42,7 +36,19 @@ function TopTracks({ token }) {
       .get("https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=10", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setTracks(res.data.items))
+      .then(async (res) => {
+        setTracks(res.data.items);
+
+        if (user) {
+          const saved = [];
+          for (const track of res.data.items) {
+            const ref = doc(db, "users", user.uid, "favorites", track.id);
+            const snap = await getDoc(ref);
+            if (snap.exists()) saved.push(track.id);
+          }
+          setSavedTrackIds(saved);
+        }
+      })
       .catch(() =>
         setStatusMsg({
           type: "error",
@@ -50,7 +56,7 @@ function TopTracks({ token }) {
         })
       )
       .finally(() => setIsLoadingTracks(false));
-  }, [token]);
+  }, [token, user]);
 
   const saveToFavorites = useCallback(
     async (track) => {
@@ -73,6 +79,7 @@ function TopTracks({ token }) {
           savedAt: new Date().toISOString(),
         });
 
+        setSavedTrackIds((prev) => [...prev, track.id]);
         setStatusMsg({ type: "success", message: `"${track.name}" saved to favorites!` });
       } catch (err) {
         console.error("Error saving track:", err);
@@ -91,7 +98,6 @@ function TopTracks({ token }) {
         Your Top Tracks
       </h2>
 
-      {/* Status Message */}
       {statusMsg.message && (
         <div
           className={`text-center py-2 mb-4 rounded ${
@@ -104,55 +110,64 @@ function TopTracks({ token }) {
         </div>
       )}
 
-      {/* Loading */}
       {isLoadingTracks ? (
         <p className="text-center text-gray-400">Loading your top tracks...</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tracks.map((track) => (
-            <div
-              key={track.id}
-              className="bg-gray-900 rounded-xl p-4 shadow-lg hover:shadow-purple-500/30 transition-transform transform hover:scale-105 duration-300 text-white"
-            >
-              <img
-                src={track.album.images[0]?.url}
-                alt={track.name}
-                className="rounded w-full h-48 object-cover mb-3"
-              />
-              <p className="font-semibold text-lg truncate">{track.name}</p>
-              <p className="text-sm text-gray-400 truncate">
-                {track.artists.map((a) => a.name).join(", ")}
-              </p>
+          {tracks.map((track) => {
+            const isSaved = savedTrackIds.includes(track.id);
 
-              {track.preview_url ? (
-                <audio controls className="w-full mt-3" src={track.preview_url} />
-              ) : (
-                <p className="text-sm text-gray-500 mt-3">Preview not available</p>
-              )}
+            return (
+              <div
+                key={track.id}
+                className="bg-gray-900 rounded-xl p-4 shadow-lg hover:shadow-purple-500/30 transition-transform transform hover:scale-105 duration-300 text-white"
+              >
+                <img
+                  src={track.album.images[0]?.url}
+                  alt={track.name}
+                  className="rounded w-full h-48 object-cover mb-3"
+                />
+                <p className="font-semibold text-lg truncate">{track.name}</p>
+                <p className="text-sm text-gray-400 truncate">
+                  {track.artists.map((a) => a.name).join(", ")}
+                </p>
 
-              <div className="flex items-center justify-between mt-4">
-                <a
-                  href={track.external_urls.spotify}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-green-400 text-sm hover:underline hover:text-green-300"
-                >
-                  <FaSpotify /> Listen
-                </a>
+                {track.preview_url ? (
+                  <audio controls className="w-full mt-3" src={track.preview_url} />
+                ) : (
+                  <p className="text-sm text-gray-500 mt-3">Preview not available</p>
+                )}
 
-                <button
-                  onClick={() => saveToFavorites(track)}
-                  disabled={savingTrackId === track.id}
-                  className={`text-pink-400 hover:text-pink-300 text-sm flex items-center gap-2 ${
-                    savingTrackId === track.id ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <FaHeart />
-                  {savingTrackId === track.id ? "Saving..." : "Save"}
-                </button>
+                <div className="flex items-center justify-between mt-4">
+                  <a
+                    href={track.external_urls.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-green-400 text-sm hover:underline hover:text-green-300"
+                  >
+                    <FaSpotify /> Listen
+                  </a>
+
+                  <button
+                    onClick={() => saveToFavorites(track)}
+                    disabled={isSaved || savingTrackId === track.id}
+                    className={`text-pink-400 text-sm flex items-center gap-2 ${
+                      isSaved
+                        ? "opacity-70 cursor-not-allowed"
+                        : "hover:text-pink-300"
+                    }`}
+                  >
+                    <FaHeart />
+                    {isSaved
+                      ? "Saved"
+                      : savingTrackId === track.id
+                      ? "Saving..."
+                      : "Save"}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

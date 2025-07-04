@@ -55,14 +55,6 @@ function TopArtists({ token, userId }) {
               {selected?.id === artist.id ? "Hide Minutes" : "View Minutes"}
             </button>
 
-            {selected?.id === artist.id && (
-              <ArtistMinutes
-                token={token}
-                artistId={artist.id}
-                artistName={artist.name}
-                userId={userId}
-              />
-            )}
           </div>
         ))}
       </div>

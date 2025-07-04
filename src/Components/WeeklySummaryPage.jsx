@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { AnimatePresence, motion } from "framer-motion";
 import dayjs from "dayjs";
-import isoWeek from "dayjs/plugin/isoWeek";
-
-dayjs.extend(isoWeek);
 
 const RANGE_MAP = {
   day: "short_term",
@@ -24,33 +21,37 @@ const PLAY_ESTIMATE = {
 
 function WeeklySummaryPage({ token, user }) {
   const [range, setRange] = useState("week");
-  const [showSlides, setShowSlides] = useState(false);
+  const [slidesStarted, setSlidesStarted] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(false);
+
   const [topArtists, setTopArtists] = useState([]);
   const [topTracks, setTopTracks] = useState([]);
-  const [topAlbum, setTopAlbum] = useState(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [topPlaylist, setTopPlaylist] = useState(null);
 
-  const currentWeekKey = `${dayjs().year()}-W${dayjs().isoWeek()}`;
+  const summaryKey = `${dayjs().format("YYYY-[RANGE]-")}${range}`;
 
   useEffect(() => {
-    if (!showSlides || !token || !user) return;
+    if (!slidesStarted || !token || !user) return;
     const fetchData = async () => {
       setLoading(true);
-      const limit = 50;
-      const spotifyRange = RANGE_MAP[range];
-      const estimatedPlay = PLAY_ESTIMATE[range];
       try {
-        const res = await axios.get(
-          `https://api.spotify.com/v1/me/top/tracks?time_range=${spotifyRange}&limit=${limit}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const trackData = res.data.items;
+        const [tracksRes, playlistsRes] = await Promise.all([
+          axios.get(`https://api.spotify.com/v1/me/top/tracks?time_range=${RANGE_MAP[range]}&limit=50`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("https://api.spotify.com/v1/me/playlists?limit=20", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const tracks = tracksRes.data.items;
+        const playCount = PLAY_ESTIMATE[range];
         const artistMap = {};
-        const albumMap = {};
-        trackData.forEach((track) => {
-          const durationMin = track.duration_ms / 60000;
+
+        tracks.forEach((track) => {
+          const minutes = track.duration_ms / 60000 * playCount;
           track.artists.forEach((artist) => {
             if (!artistMap[artist.id]) {
               artistMap[artist.id] = {
@@ -60,130 +61,103 @@ function WeeklySummaryPage({ token, user }) {
                 minutes: 0,
               };
             }
-            artistMap[artist.id].minutes += durationMin * estimatedPlay;
+            artistMap[artist.id].minutes += minutes;
           });
-          const albumId = track.album.id;
-          if (!albumMap[albumId]) {
-            albumMap[albumId] = {
-              id: albumId,
-              name: track.album.name,
-              image: track.album.images[0]?.url,
-              artist: track.artists[0].name,
-              count: 0,
-            };
-          }
-          albumMap[albumId].count++;
         });
-        const artists = Object.values(artistMap)
-          .sort((a, b) => b.minutes - a.minutes)
-          .slice(0, 3);
-        const tracks = trackData.slice(0, 4).map((track) => ({
+
+        const topArtists = Object.values(artistMap).sort((a, b) => b.minutes - a.minutes).slice(0, 5);
+        const topTracks = tracks.slice(0, 5).map((track) => ({
           id: track.id,
           name: track.name,
-          album: track.album.name,
-          albumImage: track.album.images[0]?.url,
-          playCount: estimatedPlay,
-          preview_url: track.preview_url,
+          artist: track.artists.map((a) => a.name).join(", "),
+          image: track.album.images[0]?.url,
+          playCount,
         }));
-        const topAlbum = Object.values(albumMap).sort((a, b) => b.count - a.count)[0];
-        setTopArtists(artists);
-        setTopTracks(tracks);
-        setTopAlbum(topAlbum);
-        const summaryRef = doc(db, "users", user.uid, "summaries", currentWeekKey);
-        await setDoc(summaryRef, {
-          week: currentWeekKey,
-          range,
+
+        const topPlaylist = playlistsRes.data.items.find(p => p.tracks.total > 0);
+
+        setTopArtists(topArtists);
+        setTopTracks(topTracks);
+        setTopPlaylist(topPlaylist);
+
+        await setDoc(doc(db, "users", user.uid, "summaries", summaryKey), {
           timestamp: new Date().toISOString(),
-          artists,
-          topTracks: tracks,
-          topAlbum,
+          range,
+          topArtists,
+          topTracks,
+          topPlaylist,
         });
-      } catch (err) {
-        console.error("Error fetching summary:", err);
+      } catch (e) {
+        console.error("Error fetching summary:", e);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [showSlides, token, user, range, currentWeekKey]);
+  }, [slidesStarted, range, token, user, summaryKey]);
 
   useEffect(() => {
-    if (!showSlides || currentSlide < 2) return;
-    const timer = setTimeout(() => {
-      setShowSlides(false);
-      setShowSummary(true);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [currentSlide, showSlides]);
+    if (slidesStarted && currentSlide >= 2) {
+      const timeout = setTimeout(() => {
+        setSlidesStarted(false);
+        setShowSummary(true);
+      }, 4000);
+      return () => clearTimeout(timeout);
+    }
+  }, [currentSlide, slidesStarted]);
 
   return (
-    <div className="p-6 text-white bg-[#0b0b0f]">
-      {!showSlides && !showSummary && (
+    <div className="min-h-screen bg-[#0b0b0f] text-white p-6">
+      {!slidesStarted && !showSummary && (
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-[#d8b4fe] mb-4">Weekly Summary</h2>
+          <h1 className="text-3xl font-bold text-[#d8b4fe] mb-4">Your Listening Summary</h1>
           <select
             value={range}
             onChange={(e) => setRange(e.target.value)}
-            className="bg-[#171327] rounded px-4 py-2 text-white"
+            className="bg-[#171327] text-white px-4 py-2 rounded"
           >
             {Object.keys(RANGE_MAP).map((r) => (
-              <option key={r} value={r}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </option>
+              <option key={r} value={r}>{r}</option>
             ))}
           </select>
           <button
-            onClick={() => {
-              setShowSlides(true);
-              setCurrentSlide(0);
-            }}
-            className="mt-6 bg-[#9f44ff] px-6 py-3 rounded-full font-semibold text-white hover:bg-[#e6ccff] transition"
+            onClick={() => { setSlidesStarted(true); setCurrentSlide(0); }}
+            className="block mt-6 bg-[#9f44ff] px-6 py-3 rounded-full font-semibold hover:bg-[#e6ccff]"
           >
-            Show Stats
+            View Summary
           </button>
         </div>
       )}
 
       <AnimatePresence>
-        {showSlides && !loading && (
-          <motion.div
-            key="slides"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="mt-10 text-center space-y-6"
-          >
+        {slidesStarted && !loading && (
+          <motion.div className="text-center mt-10 space-y-6">
             {currentSlide === 0 && (
-              <motion.div initial={{ y: 20 }} animate={{ y: 0 }}>
-                <h3 className="text-2xl font-bold text-[#d8b4fe] mb-2">Top Artists</h3>
+              <motion.div>
+                <h2 className="text-2xl font-bold text-[#d8b4fe] mb-4">Top Artists</h2>
                 {topArtists.map((a) => (
                   <div key={a.id} className="mb-2">
-                    <p className="text-lg">{a.name}</p>
-                    <p className="text-sm text-[#d1d5db]">
-                      {Math.round(a.minutes)} minutes
-                    </p>
+                    <p>{a.name}</p>
+                    <p className="text-sm text-gray-300">{Math.round(a.minutes)} minutes</p>
                   </div>
                 ))}
               </motion.div>
             )}
             {currentSlide === 1 && (
-              <motion.div initial={{ y: 20 }} animate={{ y: 0 }}>
-                <h3 className="text-2xl font-bold text-[#d8b4fe] mb-2">Top Tracks</h3>
+              <motion.div>
+                <h2 className="text-2xl font-bold text-[#d8b4fe] mb-4">Top Tracks</h2>
                 {topTracks.map((t) => (
                   <div key={t.id} className="mb-2">
-                    <p className="text-lg">{t.name}</p>
-                    <p className="text-sm text-[#d1d5db]">
-                      {t.playCount} estimated plays
-                    </p>
+                    <p>{t.name} by {t.artist}</p>
+                    <p className="text-sm text-gray-300">{t.playCount} estimated plays</p>
                   </div>
                 ))}
               </motion.div>
             )}
-            {currentSlide === 2 && topAlbum && (
-              <motion.div initial={{ y: 20 }} animate={{ y: 0 }}>
-                <h3 className="text-2xl font-bold text-[#d8b4fe] mb-2">Most Listened Album</h3>
-                <p className="text-lg">{topAlbum.name}</p>
-                <p className="text-sm text-[#d1d5db]">by {topAlbum.artist}</p>
+            {currentSlide === 2 && topPlaylist && (
+              <motion.div>
+                <h2 className="text-2xl font-bold text-[#d8b4fe] mb-4">Top Playlist</h2>
+                <p>{topPlaylist.name}</p>
               </motion.div>
             )}
             <button
@@ -197,30 +171,31 @@ function WeeklySummaryPage({ token, user }) {
       </AnimatePresence>
 
       {showSummary && (
-        <div className="mt-10">
-          <h3 className="text-2xl font-bold text-[#d8b4fe] mb-4">
-            Full Summary ({range})
-          </h3>
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-[#d8b4fe] mb-4">Full Summary ({range})</h2>
+
           <div className="mb-6">
-            <h4 className="font-semibold mb-2">Top Artists</h4>
-            <ul className="list-disc ml-6 text-[#d1d5db]">
+            <h3 className="font-semibold mb-2">Top Artists</h3>
+            <ul className="list-disc ml-6 text-gray-300">
               {topArtists.map((a) => (
-                <li key={a.id}>{a.name} - {Math.round(a.minutes)} minutes</li>
+                <li key={a.id}>{a.name} - {Math.round(a.minutes)} mins</li>
               ))}
             </ul>
           </div>
+
           <div className="mb-6">
-            <h4 className="font-semibold mb-2">Top Tracks</h4>
-            <ul className="list-disc ml-6 text-[#d1d5db]">
+            <h3 className="font-semibold mb-2">Top Tracks</h3>
+            <ul className="list-disc ml-6 text-gray-300">
               {topTracks.map((t) => (
-                <li key={t.id}>{t.name} - {t.playCount} plays</li>
+                <li key={t.id}>{t.name} by {t.artist} - {t.playCount} plays</li>
               ))}
             </ul>
           </div>
-          {topAlbum && (
+
+          {topPlaylist && (
             <div className="mb-6">
-              <h4 className="font-semibold mb-2">Most Listened Album</h4>
-              <p className="text-[#d1d5db]">{topAlbum.name} by {topAlbum.artist}</p>
+              <h3 className="font-semibold mb-2">Most Listened Playlist</h3>
+              <p className="text-gray-300">{topPlaylist.name}</p>
             </div>
           )}
         </div>
